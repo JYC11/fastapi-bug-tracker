@@ -11,7 +11,7 @@ ModelType = TypeVar("ModelType", bound=object)
 
 class AbstractRepository(abc.ABC):
     def __init__(self):
-        self.seen = None
+        self.seen = set()
 
     @abc.abstractmethod
     def _add(self, item: Any):

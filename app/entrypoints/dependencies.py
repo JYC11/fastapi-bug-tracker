@@ -15,5 +15,6 @@ def get_message_bus() -> MessageBus:
 
 
 def get_reader_session():
+    assert async_autocommit_session_factory is not None
     with async_autocommit_session_factory() as session:
         yield session

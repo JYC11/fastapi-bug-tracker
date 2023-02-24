@@ -293,11 +293,11 @@ def start_mappers():
         properties={
             "author": relationship(
                 models.Users,
-                back_populates=["raised_bugs"],
+                back_populates="raised_bugs",
             ),
             "assigned_to": relationship(
                 models.Users,
-                back_populates=["assigned_bugs"],
+                back_populates="assigned_bugs",
             ),
             "bug_tags": relationship(
                 models.BugTags,

@@ -6,4 +6,4 @@ flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
 flake8 app --count --exit-zero --max-line-length=120 --statistics
 black app
 isort --profile black app
-mypy -p app
+mypy --check-untyped-defs -p app
