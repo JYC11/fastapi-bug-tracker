@@ -32,16 +32,16 @@ jobs:
           python -m pip install --upgrade pip pipenv
           pipenv sync --dev
       
-      # - name: Lint tests + linting
-      #   run: |
-      #     pipenv run flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
-      #     pipenv run flake8 app --count --exit-zero --max-line-length=120 --statistics
-      #     pipenv run black app --check
-      #     pipenv run isort --profile black --check-only app
+      - name: Lint tests + linting
+        run: |
+          pipenv run flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
+          pipenv run flake8 app --count --exit-zero --max-line-length=120 --statistics
+          pipenv run black app --check
+          pipenv run isort --profile black --check-only app
      
-      # - name: Mypy type checking
-      #   run: |
-      #     pipenv run mypy --check-untyped-defs -p app
+      - name: Mypy type checking
+        run: |
+          pipenv run mypy --check-untyped-defs -p app
       
       - name: Postgres container for integration + e2e testing
         run: |
