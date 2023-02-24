@@ -8,5 +8,10 @@ services:
       - '5432:5432'
     environment:
       - POSTGRES_USER=jason
-      - POSTGRES_PASSWORD="1234"
+      - POSTGRES_PASSWORD='1234'
       - POSTGRES_DB=bug_tracker_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
