@@ -14,9 +14,6 @@ permissions:
 env:
   STAGE: testing
   WORKING_ON_PIPELINE: 'True'
-  POSTGRES_USER: jason
-  POSTGRES_PASSWORD: '1234'
-  POSTGRES_DB: bug_tracker_test
 
 jobs:
   build:
@@ -47,7 +44,7 @@ jobs:
       
       - name: Postgres container for integration + e2e testing
         run: |
-          docker-compose -f "docker-compose-for-ci.yml" up -d --build
+          docker-compose -f "compose.yml" up -d --build
           docker-compose ps
 
       - name: Test with pytest
