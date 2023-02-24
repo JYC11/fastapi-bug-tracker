@@ -34,7 +34,7 @@ jobs:
       - name: Lint tests (flake, black, isort)
         run: |
           pipenv run flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
-          pipenv run flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          pipenv run flake8 app --count --exit-zero --max-line-length=127 --statistics
           pipenv run black app --check
           pipenv run isort --check-only app
      
