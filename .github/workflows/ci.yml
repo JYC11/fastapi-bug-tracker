@@ -14,9 +14,9 @@ permissions:
 env:
   STAGE: testing
   WORKING_ON_PIPELINE: 'True'
-  # POSTGRES_USER: jason
-  # POSTGRES_PASSWORD: '1234'
-  # POSTGRES_DB: bug_tracker_test
+  POSTGRES_USER: jason
+  POSTGRES_PASSWORD: '1234'
+  POSTGRES_DB: bug_tracker_test
 
 jobs:
   build:
