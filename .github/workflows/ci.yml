@@ -14,7 +14,7 @@ permissions:
 env:
   STAGE: testing
   WORKING_ON_PIPELINE: 'True'
-  POSTGRES_PASSWORD: '1234'
+  POSTGRES_PASSWORD: 1234
 
 jobs:
   build:
