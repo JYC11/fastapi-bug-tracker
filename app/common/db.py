@@ -10,7 +10,7 @@ async_transactional_session_factory: sessionmaker | None = None
 async_autocommit_session_factory: sessionmaker | None = None
 
 
-if settings.stage != StageEnum.TEST:
+if settings.stage != StageEnum.TEST or settings.working_on_pipeline is True:
     engine = create_async_engine(
         db_settings.url,
         pool_pre_ping=True,
