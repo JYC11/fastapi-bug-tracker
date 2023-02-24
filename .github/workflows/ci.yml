@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
       - name: Set up Python 3.10
         uses: actions/setup-python@v3
         with:
@@ -44,8 +45,9 @@ jobs:
           pipenv run mypy --check-untyped-defs -p app
       
       - name: Postgres container for integration + e2e testing
-      - run: |
+        run: |
           docker-compose -f "docker-compose-for-ci.yml" up -d --build
+     
       - name: Test with pytest
         run: |
           pipenv run pytest
