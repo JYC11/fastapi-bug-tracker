@@ -1,5 +1,8 @@
-from pydantic import BaseModel
+from abc import abstractmethod
+from typing import Any
 
 
-class Event(BaseModel):
-    pass
+class Event:
+    @abstractmethod
+    def apply(self, model: Any):
+        pass

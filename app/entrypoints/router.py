@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from app.common.settings import settings
-from app.entrypoints.api_v1.enduser.user import router as enduser_user_router
+from app.entrypoints.api_v1.enduser.users import router as enduser_user_router
 
 api_v1_router = APIRouter()
 external_router = APIRouter()

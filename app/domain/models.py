@@ -25,8 +25,12 @@ class Base(abc.ABC):
     def __hash__(self):
         return hash(self.id)
 
-    # def _to_dict(self):
-    #     return {v: getattr(self, v) for v in self.__slots__}
+    def _to_dict(self):
+        return {
+            attr: getattr(self, attr, "")
+            for attr in self.__dir__()
+            if not attr.startswith("__") and type(getattr(self, attr, "")).__name__ != "method"
+        }
 
     @classmethod
     def create(cls, data: dict[str, Any]):
