@@ -34,9 +34,9 @@ jobs:
       - name: Lint tests (flake, black, isort)
         run: |
           # stop the build if there are Python syntax errors or undefined names
-          pipenv run flake8 --max-line-length 120 app
-          pipenv run black --line-length 120 --check app
-          pipenv run isort --line-length 120 --check-only app
+          pipenv run flake8 app
+          pipenv run black --check app
+          pipenv run isort --check-only app
      
       - name: Mypy type checking
         run: |
