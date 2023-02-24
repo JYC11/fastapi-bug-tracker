@@ -91,7 +91,9 @@ async def async_engine():
     engine = create_async_engine(db_settings.test_url, future=True, echo=True)
     async with engine.connect() as conn:
         async with conn.begin():
-            drop_tables_statement = f"DROP TABLE IF EXISTS {','.join(metadata.tables.keys())} CASCADE;"
+            drop_tables_statement = (
+                f"DROP TABLE IF EXISTS {','.join(metadata.tables.keys())} CASCADE;"
+            )
             await conn.execute(text(drop_tables_statement))
             await conn.run_sync(metadata.create_all)  # metadata creation here
         start_mappers()
@@ -218,7 +220,9 @@ def user_data_list(user_data_to_generate) -> list[dict[str, Any]]:
             "user_status": enums.RecordStatusEnum.ACTIVE,
             "is_admin": False,
             "security_question": faker.sentence(nb_words=10, variable_nb_words=False),
-            "security_question_answer": faker.sentence(nb_words=5, variable_nb_words=False),
+            "security_question_answer": faker.sentence(
+                nb_words=5, variable_nb_words=False
+            ),
         }
         for _ in range(user_data_to_generate)
     ]

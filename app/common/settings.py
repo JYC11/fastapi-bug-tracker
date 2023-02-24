@@ -44,7 +44,11 @@ class DBSettings(BaseSettings):
     @property
     def test_url(self) -> str:
         return "postgresql+asyncpg://{}:{}@{}:{}/{}".format(
-            self.user, self.password.get_secret_value(), self.server, self.port, self.test_db
+            self.user,
+            self.password.get_secret_value(),
+            self.server,
+            self.port,
+            self.test_db,
         )
 
     class Config:

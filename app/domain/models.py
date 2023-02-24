@@ -29,7 +29,8 @@ class Base(abc.ABC):
         return {
             attr: getattr(self, attr, "")
             for attr in self.__dir__()
-            if not attr.startswith("__") and type(getattr(self, attr, "")).__name__ != "method"
+            if not attr.startswith("__")
+            and type(getattr(self, attr, "")).__name__ != "method"
         }
 
     @classmethod
