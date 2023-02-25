@@ -1,9 +1,8 @@
 # TODO:
 ## short term (set up the messy background stuff)
-1. docker-compose file for postgres in github actions workflow
-2. github actions workflow CI
+1. modelling denormalised tables and event stores for proper Event Sourcing + CQRS
+2. re-write orm file
 3. fake repository and unit of work
-4. db integration testing
 
 
 ## priorities

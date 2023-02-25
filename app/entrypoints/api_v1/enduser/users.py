@@ -27,3 +27,23 @@ def login():
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout():
     return
+
+
+@router.get("/user/{id}", status_code=status.HTTP_201_CREATED)
+def my_user_page():
+    return
+
+
+@router.get("/user/comments", status_code=status.HTTP_201_CREATED)
+def my_comments():
+    return
+
+
+@router.get("/user/bugs", status_code=status.HTTP_201_CREATED)
+def my_bugs():
+    return
+
+
+@router.get("/user/bugs", status_code=status.HTTP_201_CREATED)
+def my_tags():
+    return

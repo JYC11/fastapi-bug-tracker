@@ -118,6 +118,8 @@ async def session(session_factory: sessionmaker):
     session: AsyncSession = session_factory()
     yield session
     for table in metadata.tables.keys():
+        alter_stmt = f"ALTER TABLE {table} DISABLE TRIGGER ALL;"
+        await session.execute(text(alter_stmt))
         delete_stmt = f"DELETE FROM {table};"
         await session.execute(text(delete_stmt))
         await session.commit()

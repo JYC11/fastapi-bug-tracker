@@ -11,10 +11,10 @@ httpx = "*"
 sqlalchemy2-stubs = "*"
 sqlalchemy = {version = "~=1.4", extras = ["asyncio"]}
 asyncpg = "*"
-greenlet = "*"
 uvicorn = "*"
 pydantic = "*"
 argon2-cffi = "*"
+greenlet = "*"
 
 [dev-packages]
 flake8 = "*"
