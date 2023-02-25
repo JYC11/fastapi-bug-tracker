@@ -244,10 +244,12 @@ def start_mappers():
             "raised_bugs": relationship(
                 models.Bugs,
                 back_populates="author",
+                foreign_keys=[bugs.c.author_id],
             ),
             "assigned_bugs": relationship(
                 models.Bugs,
                 back_populates="assigned_to",
+                foreign_keys=[bugs.c.assigned_user_id],
             ),
         },
     )
@@ -278,7 +280,6 @@ def start_mappers():
         properties={
             "tag": relationship(
                 models.Tags,
-                cascade="all, delete-orphan",
                 back_populates="bug_tags",
             ),
             "bug": relationship(
@@ -294,10 +295,12 @@ def start_mappers():
             "author": relationship(
                 models.Users,
                 back_populates="raised_bugs",
+                foreign_keys=[bugs.c.author_id],
             ),
             "assigned_to": relationship(
                 models.Users,
                 back_populates="assigned_bugs",
+                foreign_keys=[bugs.c.assigned_user_id],
             ),
             "bug_tags": relationship(
                 models.BugTags,

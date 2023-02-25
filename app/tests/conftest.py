@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 import pytest_asyncio
+from argon2 import PasswordHasher
 from faker import Faker
 from faker.providers import (
     address,
@@ -76,6 +77,11 @@ providers = [
 
 faker = Faker()
 faker = _add_providers(faker, *providers)
+
+
+@pytest.fixture(scope="function")
+def password_hasher():
+    return PasswordHasher()
 
 
 # DB STUFF FROM HERE
@@ -195,6 +201,7 @@ def user_data_in(
     security_question_answer,
 ) -> dict[str, Any]:
     return {
+        "id": uuid4(),
         "username": username,
         "email": email,
         "password": password,
@@ -215,6 +222,7 @@ def user_data_to_generate() -> int:
 def user_data_list(user_data_to_generate) -> list[dict[str, Any]]:
     return [
         {
+            "id": uuid4(),
             "username": faker.user_name(),
             "email": faker.email(),
             "password": faker.pystr(),
@@ -274,6 +282,7 @@ def comment_data_in(
     comment_is_edited,
 ):
     return {
+        "id": uuid4(),
         "bug_id": uuid4(),  # obviously replace with actual bug id
         "author_id": uuid4(),  # obviously replace with actual user id
         "text": comment_text,
@@ -291,6 +300,7 @@ def comment_data_to_generate() -> int:
 def comment_data_list(comment_data_to_generate):
     return [
         {
+            "id": uuid4(),
             "bug_id": uuid4(),  # obviously replace with actual bug id
             "author_id": uuid4(),  # obviously replace with actual user id
             "text": faker.paragraph(nb_sentences=5),
@@ -353,6 +363,7 @@ def bug_report_data_in(
     version,
 ):
     return {
+        "id": uuid4(),
         "title": bug_title,
         "author_id": uuid4(),  # obviously replace with actual user id
         "assigned_user_id": uuid4(),  # obviously replace with actual user id

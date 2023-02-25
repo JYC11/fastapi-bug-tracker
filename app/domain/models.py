@@ -1,6 +1,6 @@
 import abc
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -14,8 +14,8 @@ from app.domain.events import Event
 @dataclass(repr=True, eq=False)
 class Base(abc.ABC):
     id: UUID
-    create_dt: datetime
-    update_dt: datetime
+    create_dt: datetime = field(init=False, repr=False)
+    update_dt: datetime = field(init=False, repr=False)
 
     def __eq__(self, other):
         if not isinstance(other, Base):
@@ -35,12 +35,7 @@ class Base(abc.ABC):
 
     @classmethod
     def create(cls, data: dict[str, Any]):
-        return cls._create(data)
-
-    @classmethod
-    def _create(cls, data: dict[str, Any]):
-        obj = cls(**data)
-        return obj
+        return cls(**data)
 
     def update(self, data: dict[str, Any]):
         for field, value in data.items():
@@ -48,7 +43,7 @@ class Base(abc.ABC):
                 setattr(self, field, value)
         return
 
-
+@dataclass(repr=True, eq=False)
 class Users(Base):
     username: str
     email: str
@@ -58,34 +53,46 @@ class Users(Base):
     is_admin: bool
     security_question: str
     security_question_answer: str
-    comments: list["Comments"]
-    raised_bugs: list["Bugs"]
-    assigned_bugs: list["Bugs"]
-    events: deque[Event] = deque()
+    comments: list["Comments"] = field(default_factory=list)
+    raised_bugs: list["Bugs"] = field(default_factory=list)
+    assigned_bugs: list["Bugs"] = field(default_factory=list)
+    events: deque[Event] = field(default_factory=deque)
 
-    def check_password(self, password: str, hasher: PasswordHasher):
+    def verify_password(self, password: str, hasher: PasswordHasher):
         return hasher.verify(self.password, password)
 
     def verify_security_question_answer(self, answer: str, hasher: PasswordHasher):
         return hasher.verify(self.security_question_answer, answer)
 
+    @classmethod
+    def create_user(cls, data: dict[str, Any], hasher: PasswordHasher):
+        password = data.get("password")
+        if not password:
+            raise ValueError  # TODO: custom exception
+        security_question_answer = data.get("security_question_answer")
+        if security_question_answer:
+            data["security_question_answer"] = hasher.hash(security_question_answer)
+        data["password"] = hasher.hash(password)
+        return cls.create(data)
+
+
     def delete_user(self):
         self.user_status = RecordStatusEnum.DELETED
         # emit event
 
-
+@dataclass(repr=True, eq=False)
 class Tags(Base):
     name: str
     bug_tags: list["BugTags"]
 
-
+@dataclass(repr=True, eq=False)
 class BugTags(Base):  # many-to-many with bugs
     tag_id: UUID
     tag: Tags
     bug_id: UUID
     bug: "Bugs"
 
-
+@dataclass(repr=True, eq=False)
 class Comments(Base):
     bug_id: UUID
     bug: "Bugs"
@@ -109,7 +116,7 @@ class Comments(Base):
         self.set_edited()
         return
 
-
+@dataclass(repr=True, eq=False)
 class Bugs(Base):
     title: str
     author_id: UUID
@@ -117,15 +124,15 @@ class Bugs(Base):
     assigned_user_id: UUID
     assigned_to: Users
     description: str
-    edited: bool = False
-    images: list[str]
     urgency: UrgencyEnum
     status: BugStatusEnum
     record_status: RecordStatusEnum
     version: int = 1
-    comments: list[Comments]
-    bug_tags: list[BugTags]
-    events: deque[Event] = deque()
+    edited: bool = False
+    images: list[str] = field(default_factory=list)
+    comments: list[Comments] = field(default_factory=list)
+    bug_tags: list[BugTags] = field(default_factory=list)
+    events: deque[Event] = field(default_factory=deque)
 
     @property
     def tags(self) -> list[Tags]:
