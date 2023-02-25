@@ -38,10 +38,11 @@ class Base(abc.ABC):
         return cls(**data)
 
     def update(self, data: dict[str, Any]):
-        for field, value in data.items():
-            if hasattr(self, field):
-                setattr(self, field, value)
+        for k, v in data.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
         return
+
 
 @dataclass(repr=True, eq=False)
 class Users(Base):
@@ -75,15 +76,16 @@ class Users(Base):
         data["password"] = hasher.hash(password)
         return cls.create(data)
 
-
     def delete_user(self):
         self.user_status = RecordStatusEnum.DELETED
         # emit event
+
 
 @dataclass(repr=True, eq=False)
 class Tags(Base):
     name: str
     bug_tags: list["BugTags"]
+
 
 @dataclass(repr=True, eq=False)
 class BugTags(Base):  # many-to-many with bugs
@@ -91,6 +93,7 @@ class BugTags(Base):  # many-to-many with bugs
     tag: Tags
     bug_id: UUID
     bug: "Bugs"
+
 
 @dataclass(repr=True, eq=False)
 class Comments(Base):
@@ -115,6 +118,7 @@ class Comments(Base):
         self.update(data)
         self.set_edited()
         return
+
 
 @dataclass(repr=True, eq=False)
 class Bugs(Base):
