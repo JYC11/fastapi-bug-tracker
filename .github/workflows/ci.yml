@@ -15,6 +15,7 @@ env:
   STAGE: testing
   WORKING_ON_PIPELINE: 'True'
   POSTGRES_PASSWORD: 1234
+  SECRET_KEY: "secret!"
 
 jobs:
   build:
