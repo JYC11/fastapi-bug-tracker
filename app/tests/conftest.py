@@ -38,7 +38,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_scoped_sessi
 from sqlalchemy.orm import clear_mappers, sessionmaker
 
 from app.adapters.orm import metadata, start_mappers
-from app.common.settings import db_settings
+from app.common.settings import db_settings, settings
 from app.domain import enums
 from app.service.unit_of_work import AbstractUnitOfWork, SqlAlchemyUnitOfWork
 
@@ -101,7 +101,8 @@ async def async_engine():
             drop_tables_statement = f"DROP TABLE IF EXISTS {','.join(metadata.tables.keys())} CASCADE;"
             await conn.execute(text(drop_tables_statement))
             await conn.run_sync(metadata.create_all)  # metadata creation here
-    start_mappers()
+    if settings.working_on_pipeline is False:
+        start_mappers()
     yield engine
     clear_mappers()
 

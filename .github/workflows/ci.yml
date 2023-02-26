@@ -29,9 +29,9 @@ jobs:
           POSTGRES_DB: bug_tracker_test
         options: >-
           --health-cmd pg_isready
-          --health-interval 10s
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 3
         ports:
           - 5432:5432
 
