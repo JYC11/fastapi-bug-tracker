@@ -14,11 +14,26 @@ permissions:
 env:
   STAGE: testing
   WORKING_ON_PIPELINE: 'True'
-  POSTGRES_PASSWORD: 1234
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: 'postgres:latest'
+        env:
+          POSTGRES_USER: jason
+          POSTGRES_PASSWORD: 1234
+          POSTGRES_DB: bug_tracker_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v3
       
@@ -42,10 +57,10 @@ jobs:
         run: |
           pipenv run mypy --check-untyped-defs -p app
       
-      - name: Postgres container for integration + e2e testing
-        run: |
-          docker-compose -f "compose.yml" up -d --build
-          docker-compose ps
+      # - name: Postgres container for integration + e2e testing
+      #   run: |
+      #     docker-compose -f "compose.yml" up -d --build
+      #     docker-compose ps
 
       - name: Test with pytest
         run: |

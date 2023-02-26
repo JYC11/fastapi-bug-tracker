@@ -110,7 +110,7 @@ async def async_engine():
 async def session_factory(async_engine: AsyncEngine):
     async with async_engine.connect() as conn:
         session_factory: async_scoped_session = async_scoped_session(
-            sessionmaker(  # type: ignore
+            sessionmaker(
                 conn,
                 expire_on_commit=False,
                 autoflush=False,
