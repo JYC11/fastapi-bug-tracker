@@ -101,7 +101,7 @@ async def async_engine():
             drop_tables_statement = f"DROP TABLE IF EXISTS {','.join(metadata.tables.keys())} CASCADE;"
             await conn.execute(text(drop_tables_statement))
             await conn.run_sync(metadata.create_all)  # metadata creation here
-        start_mappers()
+    start_mappers()
     yield engine
     clear_mappers()
 
