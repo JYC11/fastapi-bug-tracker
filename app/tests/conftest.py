@@ -34,7 +34,7 @@ from faker.providers import (
 )
 from fastapi.testclient import TestClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine, async_scoped_session
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_scoped_session, create_async_engine
 from sqlalchemy.orm import clear_mappers, sessionmaker
 
 from app.adapters.orm import metadata, start_mappers
@@ -116,7 +116,7 @@ async def session_factory(async_engine: AsyncEngine):
                 autoflush=False,
                 class_=AsyncSession,
             ),
-            scopefunc=asyncio.current_task
+            scopefunc=asyncio.current_task,
         )
         yield session_factory
 
