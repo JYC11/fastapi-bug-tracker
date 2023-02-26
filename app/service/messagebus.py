@@ -64,9 +64,7 @@ class MessageBus:
 
 def inject_dependencies(handler: Callable, dependencies: dict[str, Any]):
     params = inspect.signature(handler).parameters
-    deps = {
-        name: dependency for name, dependency in dependencies.items() if name in params
-    }
+    deps = {name: dependency for name, dependency in dependencies.items() if name in params}
     return lambda message: handler(message, **deps)
 
 
@@ -85,9 +83,7 @@ class MessageBusFactory:
             "hasher": self.password_hasher,
         }
         injected_event_handlers: dict[Type[Event], list[Callable]] = {
-            event_type: [
-                inject_dependencies(handler, dependencies) for handler in handlers
-            ]
+            event_type: [inject_dependencies(handler, dependencies) for handler in handlers]
             for event_type, handlers in EVENT_HANDLERS.items()
         }
         injected_command_handlers: dict[Type[Command], Callable] = {

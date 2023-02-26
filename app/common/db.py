@@ -22,7 +22,5 @@ if settings.stage != StageEnum.TEST or settings.working_on_pipeline is True:
         engine, expire_on_commit=False, autoflush=False, class_=AsyncSession
     )
     autocommit_engine = engine.execution_options(isolation_level="AUTOCOMMIT")
-    async_autocommit_session_factory = sessionmaker(
-        autocommit_engine, expire_on_commit=False, class_=AsyncSession
-    )
+    async_autocommit_session_factory = sessionmaker(autocommit_engine, expire_on_commit=False, class_=AsyncSession)
     start_mappers()

@@ -40,6 +40,7 @@ from sqlalchemy.orm import clear_mappers, sessionmaker
 from app.adapters.orm import metadata, start_mappers
 from app.common.settings import db_settings
 from app.domain import enums
+from app.service.unit_of_work import AbstractUnitOfWork, SqlAlchemyUnitOfWork
 
 
 def _add_providers(faker: Faker, *providers) -> Faker:
@@ -97,9 +98,7 @@ async def async_engine():
     engine = create_async_engine(db_settings.test_url, future=True, echo=True)
     async with engine.connect() as conn:
         async with conn.begin():
-            drop_tables_statement = (
-                f"DROP TABLE IF EXISTS {','.join(metadata.tables.keys())} CASCADE;"
-            )
+            drop_tables_statement = f"DROP TABLE IF EXISTS {','.join(metadata.tables.keys())} CASCADE;"
             await conn.execute(text(drop_tables_statement))
             await conn.run_sync(metadata.create_all)  # metadata creation here
         start_mappers()
@@ -133,6 +132,12 @@ async def session(session_factory: sessionmaker):
 
 
 # DB STUFF ENDS HERE
+
+
+@pytest_asyncio.fixture(scope="function")
+def uow(session_factory: sessionmaker) -> AbstractUnitOfWork:
+    uow = SqlAlchemyUnitOfWork(session_factory)
+    return uow
 
 
 # TEST CLIENT FROM HERE
@@ -230,9 +235,7 @@ def user_data_list(user_data_to_generate) -> list[dict[str, Any]]:
             "user_status": enums.RecordStatusEnum.ACTIVE,
             "is_admin": False,
             "security_question": faker.sentence(nb_words=10, variable_nb_words=False),
-            "security_question_answer": faker.sentence(
-                nb_words=5, variable_nb_words=False
-            ),
+            "security_question_answer": faker.sentence(nb_words=5, variable_nb_words=False),
         }
         for _ in range(user_data_to_generate)
     ]
@@ -366,7 +369,7 @@ def bug_report_data_in(
         "id": uuid4(),
         "title": bug_title,
         "author_id": uuid4(),  # obviously replace with actual user id
-        "assigned_user_id": uuid4(),  # obviously replace with actual user id
+        "assignee_id": uuid4(),  # obviously replace with actual user id
         "description": bug_description,
         "edited": bug_report_is_edited,
         "images": images,
@@ -386,9 +389,10 @@ def bug_report_data_to_generate() -> int:
 def bug_report_list(bug_report_data_to_generate) -> list[dict[str, Any]]:
     return [
         {
+            "id": uuid4(),
             "title": faker.setence(nb_words=4, variable_nb_words=False),
             "author_id": uuid4(),  # obviously replace with actual user id
-            "assigned_user_id": uuid4(),  # obviously replace with actual user id
+            "assignee_id": uuid4(),  # obviously replace with actual user id
             "description": faker.paragraph(nb_sentences=5),
             "edited": False,
             "images": [faker.image_url() for _ in range(3)],

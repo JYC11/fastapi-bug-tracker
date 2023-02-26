@@ -8,14 +8,14 @@ from uuid import UUID, uuid4
 from argon2 import PasswordHasher
 
 from app.domain.enums import BugStatusEnum, RecordStatusEnum, UrgencyEnum, UserTypeEnum
-from app.domain.events import Event
+from app.domain.events import Event, UserCreated, UserRemoved, UserUpdated
 
 
 @dataclass(repr=True, eq=False)
 class Base(abc.ABC):
-    id: UUID
-    create_dt: datetime = field(init=False, repr=False)
-    update_dt: datetime = field(init=False, repr=False)
+    id: UUID = field(default_factory=lambda: uuid4())
+    create_dt: datetime = field(init=False, repr=True)
+    update_dt: datetime = field(init=False, repr=True)
 
     def __eq__(self, other):
         if not isinstance(other, Base):
@@ -29,8 +29,7 @@ class Base(abc.ABC):
         return {
             attr: getattr(self, attr, "")
             for attr in self.__dir__()
-            if not attr.startswith("__")
-            and type(getattr(self, attr, "")).__name__ != "method"
+            if not attr.startswith("__") and type(getattr(self, attr, "")).__name__ != "method"
         }
 
     @classmethod
@@ -41,19 +40,32 @@ class Base(abc.ABC):
         for k, v in data.items():
             if hasattr(self, k):
                 setattr(self, k, v)
-        return
+        return self
+
+    def generate_event_store(self):
+        if hasattr(self, "events"):
+            events = getattr(self, "events")
+            latest: Event = events[-1]
+            event_store = EventStore(
+                id=uuid4(),
+                aggregate_id=self.id,
+                event_name=latest.__repr__(),
+                event_data=latest.dict(),
+            )
+            return event_store
+        return None
 
 
 @dataclass(repr=True, eq=False)
 class Users(Base):
-    username: str
-    email: str
-    password: str
-    user_type: UserTypeEnum
-    user_status: RecordStatusEnum
-    is_admin: bool
-    security_question: str
-    security_question_answer: str
+    username: str = field(default_factory=lambda: "")
+    email: str = field(default_factory=lambda: "")
+    password: str = field(default_factory=lambda: "")
+    user_type: UserTypeEnum = field(default_factory=lambda: UserTypeEnum.BACKEND)
+    user_status: RecordStatusEnum = field(default_factory=lambda: RecordStatusEnum.ACTIVE)
+    is_admin: bool = field(default_factory=lambda: False)
+    security_question: str = field(default_factory=lambda: "")
+    security_question_answer: str = field(default_factory=lambda: "")
     comments: list["Comments"] = field(default_factory=list)
     raised_bugs: list["Bugs"] = field(default_factory=list)
     assigned_bugs: list["Bugs"] = field(default_factory=list)
@@ -74,36 +86,53 @@ class Users(Base):
         if security_question_answer:
             data["security_question_answer"] = hasher.hash(security_question_answer)
         data["password"] = hasher.hash(password)
-        return cls.create(data)
+        user = cls.create(data)
+        user.events.append(UserCreated(**data))
+        return user
+
+    def update_user(self, data: dict[str, Any], hasher: PasswordHasher):
+        if hasher.check_needs_rehash(self.password):
+            password = data.get("password")
+            if password is not None:
+                data["password"] = hasher.hash(password)
+        if hasher.check_needs_rehash(self.security_question_answer):
+            security_question_answer = data.get("security_question_answer")
+            if security_question_answer is not None:
+                data["security_question_answer"] = hasher.hash(security_question_answer)
+        event = UserUpdated(**data)
+        event.id = self.id
+        self.events.append(event)
+        return self.update(data)
 
     def delete_user(self):
         self.user_status = RecordStatusEnum.DELETED
-        # emit event
+        self.events.append(UserRemoved(id=self.id))
+        return self
 
 
 @dataclass(repr=True, eq=False)
 class Tags(Base):
-    name: str
-    bug_tags: list["BugTags"]
+    name: str = field(default_factory=lambda: "")
+    bug_tags: list["BugTags"] = field(default_factory=list)
 
 
 @dataclass(repr=True, eq=False)
 class BugTags(Base):  # many-to-many with bugs
-    tag_id: UUID
-    tag: Tags
-    bug_id: UUID
-    bug: "Bugs"
+    tag_id: UUID = field(default_factory=lambda: uuid4())
+    tag: Tags = field(default_factory=lambda: Tags())
+    bug_id: UUID = field(default_factory=lambda: uuid4())
+    bug: "Bugs" = field(default_factory=lambda: Bugs())
 
 
 @dataclass(repr=True, eq=False)
 class Comments(Base):
-    bug_id: UUID
-    bug: "Bugs"
-    author_id: UUID
-    author: Users
-    text: str
-    vote_count: int = 0
-    edited: bool = False
+    bug_id: UUID = field(default_factory=lambda: uuid4())
+    bug: "Bugs" = field(default_factory=lambda: Bugs())
+    author_id: UUID = field(default_factory=lambda: uuid4())
+    author: Users = field(default_factory=lambda: Users())
+    text: str = field(default_factory=lambda: "")
+    vote_count: int = field(default_factory=lambda: 0)
+    edited: bool = field(default_factory=lambda: False)
 
     def increase_vote_count(self):
         self.vote_count += 1
@@ -122,17 +151,17 @@ class Comments(Base):
 
 @dataclass(repr=True, eq=False)
 class Bugs(Base):
-    title: str
-    author_id: UUID
-    author: Users
-    assigned_user_id: UUID
-    assigned_to: Users
-    description: str
-    urgency: UrgencyEnum
-    status: BugStatusEnum
-    record_status: RecordStatusEnum
-    version: int = 1
-    edited: bool = False
+    title: str = field(default_factory=lambda: "")
+    author_id: UUID = field(default_factory=lambda: uuid4())
+    author: Users = field(default_factory=lambda: Users())
+    assignee_id: UUID = field(default_factory=lambda: uuid4())
+    assigned_to: Users = field(default_factory=lambda: Users())
+    description: str = field(default_factory=lambda: "")
+    urgency: UrgencyEnum = field(default_factory=lambda: UrgencyEnum.LOW)
+    status: BugStatusEnum = field(default_factory=lambda: BugStatusEnum.NEW)
+    record_status: RecordStatusEnum = field(default_factory=lambda: RecordStatusEnum.ACTIVE)
+    version: int = field(default_factory=lambda: 1)
+    edited: bool = field(default_factory=lambda: False)
     images: list[str] = field(default_factory=list)
     comments: list[Comments] = field(default_factory=list)
     bug_tags: list[BugTags] = field(default_factory=list)
@@ -222,7 +251,7 @@ class Bugs(Base):
 @dataclass(eq=False)
 class EventStore:
     id: UUID
-    create_dt: datetime
+    create_dt: datetime = field(init=False, repr=True)
     aggregate_id: UUID
     event_name: str
     event_data: dict

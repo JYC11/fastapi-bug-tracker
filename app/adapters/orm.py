@@ -102,7 +102,7 @@ bugs = sa.Table(
         nullable=False,
     ),
     sa.Column(
-        "assigned_user_id",
+        "assignee_id",
         postgresql.UUID(as_uuid=True),
         sa.ForeignKey(f"{users.name}.id", ondelete="cascade"),
         index=True,
@@ -248,8 +248,8 @@ def start_mappers():
             ),
             "assigned_bugs": relationship(
                 models.Bugs,
-                back_populates="assigned_to",
-                foreign_keys=[bugs.c.assigned_user_id],
+                back_populates="assignee",
+                foreign_keys=[bugs.c.assignee_id],
             ),
         },
     )
@@ -297,10 +297,10 @@ def start_mappers():
                 back_populates="raised_bugs",
                 foreign_keys=[bugs.c.author_id],
             ),
-            "assigned_to": relationship(
+            "assignee": relationship(
                 models.Users,
                 back_populates="assigned_bugs",
-                foreign_keys=[bugs.c.assigned_user_id],
+                foreign_keys=[bugs.c.assignee_id],
             ),
             "bug_tags": relationship(
                 models.BugTags,
