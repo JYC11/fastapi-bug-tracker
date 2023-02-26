@@ -34,8 +34,8 @@ from faker.providers import (
 )
 from fastapi.testclient import TestClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import clear_mappers, scoped_session, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine, async_scoped_session
+from sqlalchemy.orm import clear_mappers, sessionmaker
 
 from app.adapters.orm import metadata, start_mappers
 from app.common.settings import db_settings
@@ -88,7 +88,7 @@ def password_hasher():
 # DB STUFF FROM HERE
 @pytest.fixture(scope="session")
 def event_loop():
-    loop = asyncio.new_event_loop()
+    loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
 
@@ -109,13 +109,14 @@ async def async_engine():
 @pytest_asyncio.fixture(scope="function")
 async def session_factory(async_engine: AsyncEngine):
     async with async_engine.connect() as conn:
-        session_factory: scoped_session = scoped_session(
+        session_factory: async_scoped_session = async_scoped_session(
             sessionmaker(  # type: ignore
                 conn,
                 expire_on_commit=False,
                 autoflush=False,
                 class_=AsyncSession,
-            )
+            ),
+            scopefunc=asyncio.current_task
         )
         yield session_factory
 
