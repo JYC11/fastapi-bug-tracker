@@ -2,7 +2,11 @@ class ItemNotFound(Exception):
     ...
 
 
-class NotAllowed(Exception):
+class Unauthorized(Exception):
+    ...
+
+
+class Forbidden(Exception):
     ...
 
 

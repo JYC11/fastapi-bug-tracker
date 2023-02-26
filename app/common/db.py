@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from sqlalchemy.orm import sessionmaker
 
 from app.adapters.orm import start_mappers
-from app.common.settings import StageEnum, db_settings, settings
+from app.common.settings import StageEnum, settings
 
 engine: AsyncEngine | None = None
 autocommit_engine: AsyncEngine | None = None
@@ -12,10 +12,10 @@ async_autocommit_session_factory: sessionmaker | None = None
 
 if settings.stage != StageEnum.TEST or settings.working_on_pipeline is True:
     engine = create_async_engine(
-        db_settings.url,
+        settings.db_settings.url,
         pool_pre_ping=True,
-        pool_size=db_settings.pool_size,
-        max_overflow=db_settings.max_overflow,
+        pool_size=settings.db_settings.pool_size,
+        max_overflow=settings.db_settings.max_overflow,
         future=True,
     )
     async_transactional_session_factory = sessionmaker(

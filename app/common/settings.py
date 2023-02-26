@@ -1,8 +1,10 @@
 import enum
 import os
 import sys
+from base64 import b64encode
+from datetime import timedelta
 
-from pydantic import BaseSettings, SecretStr
+from pydantic import BaseSettings, Field, SecretStr
 
 
 class StageEnum(str, enum.Enum):
@@ -56,7 +58,26 @@ class DBSettings(BaseSettings):
         env_file = ".env"
 
 
+class JWTSettings(BaseSettings):
+    raw_secret: SecretStr = Field(..., env="SECRET_KEY")
+    public_key: str | None = None
+    private_key: str | None = None
+    algorithm: str = "HS256"
+    authorization_type: str = "Bearer"
+    verify: bool = True
+    verify_expiration: bool = True
+    expiration_delta = timedelta(minutes=30)
+    refresh_expiration_delta = timedelta(days=15)
+    allow_refresh = True
+    access_toke_expire_minutes = 60 * 24 * 8
+
+    @property
+    def secret_key(self):
+        return SecretStr(b64encode(self.raw_secret.get_secret_value().encode()).decode())
+
+
 db_settings = DBSettings()
+jwt_settings = JWTSettings()
 
 
 class Settings(BaseSettings):
@@ -74,6 +95,7 @@ class Settings(BaseSettings):
     backend_cors_origins: list[str] = ["*"]
 
     db_settings: DBSettings = db_settings
+    jwt_settings: JWTSettings = jwt_settings
 
     class Config:
         env_file = ".env"

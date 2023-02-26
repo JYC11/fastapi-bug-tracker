@@ -38,7 +38,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_scoped_sessi
 from sqlalchemy.orm import clear_mappers, sessionmaker
 
 from app.adapters.orm import metadata, start_mappers
-from app.common.settings import db_settings, settings
+from app.common.settings import settings
 from app.domain import enums
 from app.service.unit_of_work import AbstractUnitOfWork, SqlAlchemyUnitOfWork
 
@@ -95,7 +95,7 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="session")
 async def async_engine():
-    engine = create_async_engine(db_settings.test_url, future=True, echo=True)
+    engine = create_async_engine(settings.db_settings.test_url, future=True, echo=True)
     async with engine.connect() as conn:
         async with conn.begin():
             drop_tables_statement = f"DROP TABLE IF EXISTS {','.join(metadata.tables.keys())} CASCADE;"
@@ -105,6 +105,15 @@ async def async_engine():
         start_mappers()
     yield engine
     clear_mappers()
+
+
+async def clear_tables_of_data(session: AsyncSession):
+    for table in metadata.tables.keys():
+        alter_stmt = f"ALTER TABLE {table} DISABLE TRIGGER ALL;"
+        await session.execute(text(alter_stmt))
+        delete_stmt = f"DELETE FROM {table};"
+        await session.execute(text(delete_stmt))
+    await session.commit()
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -119,19 +128,20 @@ async def session_factory(async_engine: AsyncEngine):
             ),
             scopefunc=asyncio.current_task,
         )
-        yield session_factory
+        try:
+            yield session_factory
+        finally:
+            async with session_factory() as _session:
+                await clear_tables_of_data(_session)
 
 
 @pytest_asyncio.fixture(scope="function")
 async def session(session_factory):
     async with session_factory() as _session:
-        yield _session
-        for table in metadata.tables.keys():
-            alter_stmt = f"ALTER TABLE {table} DISABLE TRIGGER ALL;"
-            await _session.execute(text(alter_stmt))
-            delete_stmt = f"DELETE FROM {table};"
-            await _session.execute(text(delete_stmt))
-        await _session.commit()
+        try:
+            yield _session
+        finally:
+            await clear_tables_of_data(_session)
 
 
 # DB STUFF ENDS HERE

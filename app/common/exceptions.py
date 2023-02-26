@@ -1,0 +1,6 @@
+class TokenExpired(Exception):
+    ...
+
+
+class InvalidToken(Exception):
+    ...

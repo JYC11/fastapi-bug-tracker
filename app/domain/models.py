@@ -8,7 +8,8 @@ from uuid import UUID, uuid4
 from argon2 import PasswordHasher
 
 from app.domain.enums import BugStatusEnum, RecordStatusEnum, UrgencyEnum, UserTypeEnum
-from app.domain.events import Event, UserCreated, UserRemoved, UserUpdated
+from app.domain.events import Event
+from app.service.users.events import UserCreated, UserRemoved, UserUpdated
 
 
 @dataclass(repr=True, eq=False)
@@ -86,19 +87,18 @@ class Users(Base):
         if security_question_answer:
             data["security_question_answer"] = hasher.hash(security_question_answer)
         data["password"] = hasher.hash(password)
+        data["id"] = uuid4()
         user = cls.create(data)
         user.events.append(UserCreated(**data))
         return user
 
     def update_user(self, data: dict[str, Any], hasher: PasswordHasher):
-        if hasher.check_needs_rehash(self.password):
-            password = data.get("password")
-            if password is not None:
-                data["password"] = hasher.hash(password)
-        if hasher.check_needs_rehash(self.security_question_answer):
-            security_question_answer = data.get("security_question_answer")
-            if security_question_answer is not None:
-                data["security_question_answer"] = hasher.hash(security_question_answer)
+        password = data.get("password")
+        if password is not None:
+            data["password"] = hasher.hash(password)
+        security_question_answer = data.get("security_question_answer")
+        if security_question_answer is not None:
+            data["security_question_answer"] = hasher.hash(security_question_answer)
         event = UserUpdated(**data)
         event.id = self.id
         self.events.append(event)
@@ -108,6 +108,9 @@ class Users(Base):
         self.user_status = RecordStatusEnum.DELETED
         self.events.append(UserRemoved(id=self.id))
         return self
+
+    def set_password(self, password: str, hasher: PasswordHasher):
+        self.password = hasher.hash(password)
 
 
 @dataclass(repr=True, eq=False)

@@ -1,8 +1,8 @@
 from argon2 import PasswordHasher
 
 from app.domain import enums
-from app.domain.events import UserCreated, UserRemoved, UserUpdated
 from app.domain.models import Users
+from app.service.users.events import UserCreated, UserRemoved, UserUpdated
 
 
 def verify(
