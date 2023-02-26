@@ -10,5 +10,9 @@ class Forbidden(Exception):
     ...
 
 
+class DuplicateRecord(Exception):
+    ...
+
+
 class ConcurrencyException(Exception):
     ...

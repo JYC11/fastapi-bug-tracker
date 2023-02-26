@@ -13,6 +13,9 @@ from app.service.users import commands
 
 async def create_user(cmd: commands.CreateUser, *, uow: AbstractUnitOfWork, hasher: PasswordHasher):
     async with uow:
+        users: list[Users] = await uow.users.list(filters={"email__eq": cmd.email})
+        if users:
+            raise exc.DuplicateRecord(f"user with email {cmd.email} exists")
         data_in = cmd.dict()
         data_in["id"] = uuid4()
         new_user = Users.create_user(data=data_in, hasher=hasher)
