@@ -84,7 +84,7 @@ class SqlAlchemyRepository(Generic[ModelType], AbstractRepository):
             return models
         _filters = []
         for key, value in filters.items():
-            column, operator = key.split(",")
+            column, operator = key.split("__")
             try:
                 model_column = getattr(self.model, column)
             except AttributeError:
