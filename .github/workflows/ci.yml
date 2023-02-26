@@ -57,11 +57,6 @@ jobs:
       - name: Mypy type checking
         run: |
           pipenv run mypy --check-untyped-defs -p app
-      
-      # - name: Postgres container for integration + e2e testing
-      #   run: |
-      #     docker-compose -f "compose.yml" up -d --build
-      #     docker-compose ps
 
       - name: Test with pytest
         run: |
