@@ -35,7 +35,7 @@ from faker.providers import (
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import clear_mappers, sessionmaker
+from sqlalchemy.orm import clear_mappers, scoped_session, sessionmaker
 
 from app.adapters.orm import metadata, start_mappers
 from app.common.settings import db_settings
@@ -109,33 +109,34 @@ async def async_engine():
 @pytest_asyncio.fixture(scope="function")
 async def session_factory(async_engine: AsyncEngine):
     async with async_engine.connect() as conn:
-        session_factory: sessionmaker = sessionmaker(
-            conn,
-            expire_on_commit=False,
-            autoflush=False,
-            class_=AsyncSession,
+        session_factory: scoped_session = scoped_session(
+            sessionmaker(  # type: ignore
+                conn,
+                expire_on_commit=False,
+                autoflush=False,
+                class_=AsyncSession,
+            )
         )
         yield session_factory
 
 
 @pytest_asyncio.fixture(scope="function")
-async def session(session_factory: sessionmaker):
-    session: AsyncSession = session_factory()
-    yield session
-    for table in metadata.tables.keys():
-        alter_stmt = f"ALTER TABLE {table} DISABLE TRIGGER ALL;"
-        await session.execute(text(alter_stmt))
-        delete_stmt = f"DELETE FROM {table};"
-        await session.execute(text(delete_stmt))
-        await session.commit()
-    await session.close()
+async def session(session_factory):
+    async with session_factory() as _session:
+        yield _session
+        for table in metadata.tables.keys():
+            alter_stmt = f"ALTER TABLE {table} DISABLE TRIGGER ALL;"
+            await _session.execute(text(alter_stmt))
+            delete_stmt = f"DELETE FROM {table};"
+            await _session.execute(text(delete_stmt))
+        await _session.commit()
 
 
 # DB STUFF ENDS HERE
 
 
 @pytest_asyncio.fixture(scope="function")
-def uow(session_factory: sessionmaker) -> AbstractUnitOfWork:
+def uow(session_factory) -> AbstractUnitOfWork:
     uow = SqlAlchemyUnitOfWork(session_factory)
     return uow
 
