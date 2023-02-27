@@ -65,7 +65,7 @@ class SqlAlchemyRepository(Generic[ModelType], AbstractRepository):
         for item in items:
             self.seen.add(item)
 
-    async def _get(self, ident: UUID):
+    async def _get(self, ident: UUID) -> Type[ModelType] | None:
         _query = self.query.where(self.model.id == ident)  # type: ignore
         res = await self.session.execute(_query)
         model: Type[ModelType] | None = res.scalars().first()
@@ -77,7 +77,7 @@ class SqlAlchemyRepository(Generic[ModelType], AbstractRepository):
             await self.session.delete(model)
         return
 
-    async def _list(self, filters: dict[str, Any] | None = None):
+    async def _list(self, filters: dict[str, Any] | None = None) -> list[Type[ModelType]]:
         if not filters:
             res = await self.session.execute(self.query)
             models = res.scalars().all()

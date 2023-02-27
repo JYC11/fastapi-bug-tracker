@@ -9,7 +9,7 @@ from app.service.users.repository import UserRepository
 
 
 @pytest.mark.asyncio
-async def test_user_repository_create(
+async def user_repository_create(  # deprecated because it is tested by handler test
     session: AsyncSession,
     user_data_in: dict,
     password_hasher: PasswordHasher,
@@ -26,7 +26,7 @@ async def test_user_repository_create(
 
 
 @pytest.mark.asyncio
-async def test_user_repository_update(
+async def user_repository_update(  # deprecated because it is tested by handler test
     session: AsyncSession,
     user_data_in: dict,
     password_hasher: PasswordHasher,

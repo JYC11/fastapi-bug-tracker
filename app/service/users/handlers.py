@@ -13,7 +13,12 @@ from app.service.users import commands
 
 async def create_user(cmd: commands.CreateUser, *, uow: AbstractUnitOfWork, hasher: PasswordHasher):
     async with uow:
-        users: list[Users] = await uow.users.list(filters={"email__eq": cmd.email})
+        users: list[Users] = await uow.users.list(
+            filters={
+                "email__eq": cmd.email,
+                "user_status__eq": enums.RecordStatusEnum.ACTIVE,
+            }
+        )
         if users:
             raise exc.DuplicateRecord(f"user with email {cmd.email} exists")
         data_in = cmd.dict()
@@ -30,10 +35,12 @@ async def update_user(cmd: commands.UpdateUser, *, uow: AbstractUnitOfWork, hash
         user: Users | None = await uow.users.get(cmd.id)
         if not user:
             raise exc.ItemNotFound(f"user with id {cmd.id} not found")
+        if user.user_status == enums.RecordStatusEnum.DELETED:
+            raise exc.ItemNotFound("user is deleted")
         data = cmd.dict(exclude_unset=True, exclude_none=True)
         user.update_user(data, hasher)
         uow.event_store.add(user.generate_event_store())
-        uow.commit()
+        await uow.commit()
         await uow.refresh(user)
         return user
 
@@ -43,9 +50,11 @@ async def delete_user(cmd: commands.DeleteUser, *, uow: AbstractUnitOfWork):
         user: Users | None = await uow.users.get(cmd.id)
         if not user:
             raise exc.ItemNotFound(f"user with id {cmd.id} not found")
+        if user.user_status == enums.RecordStatusEnum.DELETED:
+            return
         user.delete_user()
         uow.event_store.add(user.generate_event_store())
-        uow.commit()
+        await uow.commit()
         return
 
 
@@ -77,7 +86,7 @@ async def login(cmd: commands.Login, *, uow: AbstractUnitOfWork, hasher: Passwor
         refresh_token = create_jwt_token(
             subject=str(user.id),
             private_claims={"user_type": user.user_type},
-            refresh=False,
+            refresh=True,
         )
         return {
             "message": "logged in",

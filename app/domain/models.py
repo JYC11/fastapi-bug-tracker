@@ -6,10 +6,11 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 
 from app.domain.enums import BugStatusEnum, RecordStatusEnum, UrgencyEnum, UserTypeEnum
 from app.domain.events import Event
-from app.service.users.events import UserCreated, UserRemoved, UserUpdated
+from app.service.users.events import UserCreated, UserDeleted, UserUpdated
 
 
 @dataclass(repr=True, eq=False)
@@ -73,10 +74,18 @@ class Users(Base):
     events: deque[Event] = field(default_factory=deque)
 
     def verify_password(self, password: str, hasher: PasswordHasher):
-        return hasher.verify(self.password, password)
+        try:
+            hasher.verify(self.password, password)
+            return True
+        except VerifyMismatchError:
+            return False
 
     def verify_security_question_answer(self, answer: str, hasher: PasswordHasher):
-        return hasher.verify(self.security_question_answer, answer)
+        try:
+            hasher.verify(self.security_question_answer, answer)
+            return True
+        except VerifyMismatchError:
+            return False
 
     @classmethod
     def create_user(cls, data: dict[str, Any], hasher: PasswordHasher):
@@ -106,7 +115,7 @@ class Users(Base):
 
     def delete_user(self):
         self.user_status = RecordStatusEnum.DELETED
-        self.events.append(UserRemoved(id=self.id))
+        self.events.append(UserDeleted(id=self.id))
         return self
 
     def set_password(self, password: str, hasher: PasswordHasher):

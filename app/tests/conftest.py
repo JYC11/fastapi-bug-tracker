@@ -449,4 +449,15 @@ def bug_report_list(bug_report_data_to_generate) -> list[dict[str, Any]]:
     ]
 
 
+@pytest_asyncio.fixture
+def expired_refresh_token() -> str:
+    return """eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiO
+    jE2Nzc0OTU3ODUsInN1YiI6IjBhMjNhOWE2LTE4NGEtNGFmMS1iOTRiLW
+    ExMjk4MzRhMGRhYiIsImlhdCI6MTY3NzQ5Mzk4NSwianRpIjoiYjVkYTF
+    jZGZmYmI3NDQwNzkwYWQwMDQzNDcxMWZlYmMiLCJ1c2VyX3R5cGUiOiJw
+    bSJ9.9HgHW3lZLps_YGwYmjAVrx3qXcaDmprdtZBBT6Fq84s""".replace(
+        "\n", ""
+    )
+
+
 # FAKE DATA GENERATION ENDS HERE

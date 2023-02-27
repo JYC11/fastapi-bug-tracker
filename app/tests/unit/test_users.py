@@ -2,7 +2,7 @@ from argon2 import PasswordHasher
 
 from app.domain import enums
 from app.domain.models import Users
-from app.service.users.events import UserCreated, UserRemoved, UserUpdated
+from app.service.users.events import UserCreated, UserDeleted, UserUpdated
 
 
 def verify(
@@ -70,7 +70,7 @@ def test_user_delete(user_data_in: dict, password_hasher: PasswordHasher):
     assert new_user.user_status == enums.RecordStatusEnum.DELETED
 
     assert len(new_user.events) == 2
-    assert isinstance(new_user.events[0], UserCreated), isinstance(new_user.events[1], UserRemoved)
+    assert isinstance(new_user.events[0], UserCreated), isinstance(new_user.events[1], UserDeleted)
 
     user_from_event = Users()
     for event in new_user.events:

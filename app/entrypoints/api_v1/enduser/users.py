@@ -24,8 +24,8 @@ def login():
     return
 
 
-@router.post("/logout", status_code=status.HTTP_200_OK)
-def logout():
+@router.post("/refresh", status_code=status.HTTP_200_OK)
+def refresh():
     return
 
 

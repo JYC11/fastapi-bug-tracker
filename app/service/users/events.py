@@ -49,7 +49,7 @@ class UserUpdated(Event):
 
 
 @dataclass(repr=True, eq=False)
-class UserRemoved(Event):
+class UserDeleted(Event):
     id: UUID = field(repr=False)
     user_status: RecordStatusEnum = field(default_factory=lambda: RecordStatusEnum.DELETED, repr=False)
 
