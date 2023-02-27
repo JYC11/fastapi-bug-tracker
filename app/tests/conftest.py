@@ -40,7 +40,10 @@ from sqlalchemy.orm import clear_mappers, sessionmaker
 from app.adapters.orm import metadata, start_mappers
 from app.common.settings import settings
 from app.domain import enums
+from app.entrypoints import dependencies as deps
+from app.service.messagebus import MessageBus, MessageBusFactory
 from app.service.unit_of_work import AbstractUnitOfWork, SqlAlchemyUnitOfWork
+from app.tests.fakes.unit_of_work import FakeUnitOfWork
 
 
 def _add_providers(faker: Faker, *providers) -> Faker:
@@ -147,18 +150,46 @@ async def session(session_factory):
 # DB STUFF ENDS HERE
 
 
+# DEPENDENCIES AND FAKE DEPENDENCIES
 @pytest_asyncio.fixture(scope="function")
 def uow(session_factory) -> AbstractUnitOfWork:
     uow = SqlAlchemyUnitOfWork(session_factory)
     return uow
 
 
+@pytest_asyncio.fixture(scope="function")
+def fake_uow() -> AbstractUnitOfWork:
+    uow = FakeUnitOfWork()
+    return uow
+
+
+@pytest_asyncio.fixture
+def use_fake_uow() -> bool:
+    return False
+
+
+@pytest_asyncio.fixture(scope="function")
+def messagebus(
+    use_fake_uow: bool,
+    uow: AbstractUnitOfWork,
+    fake_uow: AbstractUnitOfWork,
+) -> MessageBus:
+    MESSAGEBUS = MessageBusFactory(
+        uow=fake_uow if use_fake_uow else uow,
+        password_hasher=PasswordHasher(),
+    )
+    return MESSAGEBUS()
+
+
 # TEST CLIENT FROM HERE
 @pytest.fixture(scope="function")
-def client():
+def client(messagebus: MessageBus, session: AsyncSession):
     from app.main import app
 
     # dependency injection here
+    app.dependency_overrides[deps.get_message_bus] = lambda: messagebus
+    app.dependency_overrides[deps.get_reader_session] = lambda: session
+
     with TestClient(app) as c:
         yield c
 

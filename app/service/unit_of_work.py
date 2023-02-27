@@ -3,11 +3,12 @@ import abc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 
-from app.adapters.repository import AbstractRepository, ModelType, SqlAlchemyRepository
+from app.adapters.repository import AbstractRepository, ModelType
 from app.common.db import async_transactional_session_factory
-from app.domain.models import Bugs, Tags
 from app.service import exceptions
+from app.service.bugs.repository import BugRepository
 from app.service.event_store.repository import EventStoreRepository
+from app.service.tags.repository import TagRepository
 from app.service.users.repository import UserRepository
 
 DEFAULT_TRANSACTIONAL_FACTORY = async_transactional_session_factory
@@ -56,8 +57,8 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
 
     async def __aenter__(self) -> AbstractUnitOfWork:
         self.session: AsyncSession = self.session_factory()
-        self.bugs = SqlAlchemyRepository(model=Bugs, session=self.session)
-        self.tags = SqlAlchemyRepository(model=Tags, session=self.session)
+        self.bugs = BugRepository(session=self.session)
+        self.tags = TagRepository(session=self.session)
         self.users = UserRepository(session=self.session)
         self.event_store = EventStoreRepository(session=self.session)
         return await super().__aenter__()

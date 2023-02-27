@@ -158,7 +158,7 @@ class Bugs(Base):
     author_id: UUID = field(default_factory=lambda: uuid4())
     author: Users = field(default_factory=lambda: Users())
     assignee_id: UUID = field(default_factory=lambda: uuid4())
-    assigned_to: Users = field(default_factory=lambda: Users())
+    assignee: Users = field(default_factory=lambda: Users())
     description: str = field(default_factory=lambda: "")
     urgency: UrgencyEnum = field(default_factory=lambda: UrgencyEnum.LOW)
     status: BugStatusEnum = field(default_factory=lambda: BugStatusEnum.NEW)

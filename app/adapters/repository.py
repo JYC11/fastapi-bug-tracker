@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Generic, List, Type, TypeVar
+from typing import Any, Generic, Type, TypeVar
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +18,7 @@ class AbstractRepository(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _add_all(self, items: List[Any]):
+    def _add_all(self, items: list[Any]):
         ...
 
     @abc.abstractmethod
@@ -36,7 +36,7 @@ class AbstractRepository(abc.ABC):
     def add(self, item: Any):
         self._add(item)
 
-    def add_all(self, items: List[Any]):
+    def add_all(self, items: list[Any]):
         self._add_all(items)
 
     async def get(self, ident: Any):
@@ -60,7 +60,7 @@ class SqlAlchemyRepository(Generic[ModelType], AbstractRepository):
         self.session.add(item)
         self.seen.add(item)
 
-    def _add_all(self, items: List[Type[ModelType]]):
+    def _add_all(self, items: list[Type[ModelType]]):
         self.session.add_all(items)
         for item in items:
             self.seen.add(item)
