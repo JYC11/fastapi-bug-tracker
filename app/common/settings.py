@@ -87,10 +87,12 @@ class Settings(BaseSettings):
     tz: str = "Asia/Seoul"
 
     api_v1_str: str = "/api/v1"
+    api_v1_login_url: str = "/api/v1/external/enduser/login"
     backoffice_prefix: str = "/backoffice"
     enduser_prefix: str = "/enduser"
     internal_prefix: str = "/internal"
     external_prefix: str = "/external"
+    test_url: str = "http://test"
 
     backend_cors_origins: list[str] = ["*"]
 

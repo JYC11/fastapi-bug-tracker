@@ -36,7 +36,7 @@ class Base(abc.ABC):
 
     @classmethod
     def create(cls, data: dict[str, Any]):
-        return cls(**data)
+        return cls(id=uuid4(), **data)
 
     def update(self, data: dict[str, Any]):
         for k, v in data.items():
@@ -51,7 +51,7 @@ class Base(abc.ABC):
             event_store = EventStore(
                 id=uuid4(),
                 aggregate_id=self.id,
-                event_name=latest.__repr__(),
+                event_name=latest.name(),
                 event_data=latest.dict(),
             )
             return event_store
@@ -72,6 +72,10 @@ class Users(Base):
     raised_bugs: list["Bugs"] = field(default_factory=list)
     assigned_bugs: list["Bugs"] = field(default_factory=list)
     events: deque[Event] = field(default_factory=deque)
+
+    @property
+    def is_active(self) -> bool:
+        return self.user_status == RecordStatusEnum.ACTIVE
 
     def verify_password(self, password: str, hasher: PasswordHasher):
         try:
@@ -96,9 +100,8 @@ class Users(Base):
         if security_question_answer:
             data["security_question_answer"] = hasher.hash(security_question_answer)
         data["password"] = hasher.hash(password)
-        data["id"] = uuid4()
         user = cls.create(data)
-        user.events.append(UserCreated(**data))
+        user.events.append(UserCreated(id=user.id, **data))
         return user
 
     def update_user(self, data: dict[str, Any], hasher: PasswordHasher):

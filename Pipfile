@@ -16,6 +16,7 @@ pydantic = "*"
 argon2-cffi = "*"
 greenlet = "*"
 python-jose = {version = "*", extras = ["cryptography"]}
+python-multipart = "*"
 
 [dev-packages]
 mypy = "*"

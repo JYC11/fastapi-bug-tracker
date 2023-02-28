@@ -19,8 +19,8 @@ async def user_repository_create(  # deprecated because it is tested by handler 
     user_repo.add(new_user)
     await session.commit()
 
-    query = await session.execute(select(Users))
-    user: Users | None = query.scalars().first()
+    execution = await session.execute(select(Users))
+    user: Users | None = execution.scalars().first()
     assert user is not None
     assert user.id == new_user.id
 
@@ -39,8 +39,8 @@ async def user_repository_update(  # deprecated because it is tested by handler 
     update_data = {"user_type": enums.UserTypeEnum.PM, "is_admin": True}
     new_user.update_user(update_data, password_hasher)
     await session.commit()
-    query = await session.execute(select(Users))
-    user: Users | None = query.scalars().first()
+    execution = await session.execute(select(Users))
+    user: Users | None = execution.scalars().first()
     assert user is not None
     assert getattr(user, "user_type") == enums.UserTypeEnum.PM
     assert getattr(user, "is_admin") is True
@@ -48,8 +48,8 @@ async def user_repository_update(  # deprecated because it is tested by handler 
 
     new_user.delete_user()
     await session.commit()
-    query = await session.execute(select(Users))
-    del_user: Users | None = query.scalars().first()
+    execution = await session.execute(select(Users))
+    del_user: Users | None = execution.scalars().first()
     assert del_user is not None
     assert getattr(del_user, "user_status") == enums.RecordStatusEnum.DELETED
     assert len(user.events) == 3
@@ -69,6 +69,6 @@ async def test_user_repository_delete(
     await user_repo.remove(new_user.id)
     await session.commit()
 
-    query = await session.execute(select(Users))
-    user: Users | None = query.scalars().first()
+    execution = await session.execute(select(Users))
+    user: Users | None = execution.scalars().first()
     assert user is None

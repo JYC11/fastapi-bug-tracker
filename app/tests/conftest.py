@@ -41,6 +41,7 @@ from app.adapters.orm import metadata, start_mappers
 from app.common.settings import settings
 from app.domain import enums
 from app.entrypoints import dependencies as deps
+from app.main import app
 from app.service.messagebus import MessageBus, MessageBusFactory
 from app.service.unit_of_work import AbstractUnitOfWork, SqlAlchemyUnitOfWork
 from app.tests.fakes.unit_of_work import FakeUnitOfWork
@@ -183,7 +184,7 @@ def messagebus(
 
 # TEST CLIENT FROM HERE
 @pytest.fixture(scope="function")
-def client(messagebus: MessageBus, session: AsyncSession):
+def client(messagebus: MessageBus, session: AsyncSession, event_loop):
     from app.main import app
 
     # dependency injection here
@@ -192,6 +193,15 @@ def client(messagebus: MessageBus, session: AsyncSession):
 
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture(scope="function")
+def test_app(messagebus: MessageBus, session: AsyncSession, event_loop):
+    # dependency injection here
+    app.dependency_overrides[deps.get_message_bus] = lambda: messagebus
+    app.dependency_overrides[deps.get_reader_session] = lambda: session
+
+    yield app
 
 
 # TEST CLIENT ENDS HERE
@@ -250,7 +260,6 @@ def user_data_in(
     security_question_answer,
 ) -> dict[str, Any]:
     return {
-        "id": uuid4(),
         "username": username,
         "email": email,
         "password": password,
@@ -271,7 +280,6 @@ def user_data_to_generate() -> int:
 def user_data_list(user_data_to_generate) -> list[dict[str, Any]]:
     return [
         {
-            "id": uuid4(),
             "username": faker.user_name(),
             "email": faker.email(),
             "password": faker.pystr(),
@@ -329,7 +337,6 @@ def comment_data_in(
     comment_is_edited,
 ):
     return {
-        "id": uuid4(),
         "bug_id": uuid4(),  # obviously replace with actual bug id
         "author_id": uuid4(),  # obviously replace with actual user id
         "text": comment_text,
@@ -347,7 +354,6 @@ def comment_data_to_generate() -> int:
 def comment_data_list(comment_data_to_generate):
     return [
         {
-            "id": uuid4(),
             "bug_id": uuid4(),  # obviously replace with actual bug id
             "author_id": uuid4(),  # obviously replace with actual user id
             "text": faker.paragraph(nb_sentences=5),
@@ -410,7 +416,6 @@ def bug_report_data_in(
     version,
 ):
     return {
-        "id": uuid4(),
         "title": bug_title,
         "author_id": uuid4(),  # obviously replace with actual user id
         "assignee_id": uuid4(),  # obviously replace with actual user id
@@ -433,7 +438,6 @@ def bug_report_data_to_generate() -> int:
 def bug_report_list(bug_report_data_to_generate) -> list[dict[str, Any]]:
     return [
         {
-            "id": uuid4(),
             "title": faker.setence(nb_words=4, variable_nb_words=False),
             "author_id": uuid4(),  # obviously replace with actual user id
             "assignee_id": uuid4(),  # obviously replace with actual user id

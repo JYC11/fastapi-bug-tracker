@@ -7,6 +7,9 @@ from argon2 import PasswordHasher
 from app.domain.commands import Command
 from app.domain.events import Event
 from app.service.unit_of_work import AbstractUnitOfWork
+from app.service.users import commands as user_commands
+from app.service.users import events as user_events
+from app.service.users import handlers as user_handlers
 
 Message = Union[Command, Event]
 
@@ -68,8 +71,18 @@ def inject_dependencies(handler: Callable, dependencies: dict[str, Any]):
     return lambda message: handler(message, **deps)
 
 
-EVENT_HANDLERS: dict[Type[Event], list[Callable]] = {}
-COMMAND_HANDLERS: dict[Type[Command], Callable] = {}
+EVENT_HANDLERS: dict[Type[Event], list[Callable]] = {
+    user_events.UserCreated: [],
+    user_events.UserUpdated: [],
+    user_events.UserDeleted: [],
+}
+COMMAND_HANDLERS: dict[Type[Command], Callable] = {
+    user_commands.CreateUser: user_handlers.create_user,
+    user_commands.UpdateUser: user_handlers.update_user,
+    user_commands.DeleteUser: user_handlers.delete_user,
+    user_commands.Login: user_handlers.login,
+    user_commands.Refresh: user_handlers.refresh,
+}
 
 
 class MessageBusFactory:

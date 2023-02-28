@@ -1,7 +1,6 @@
 #!/bin/sh -e
 set -x
 
-black . --line-length=120
-ruff clean
 ruff --fix .
+black . --line-length=120
 mypy --check-untyped-defs -p app

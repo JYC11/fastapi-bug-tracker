@@ -2,7 +2,6 @@
 
 set -x
 
-mypy -p app
+ruff --fix .
 black app --check
-isort --check-only app
-flake8
+mypy -p app

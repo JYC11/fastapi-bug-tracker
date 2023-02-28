@@ -1,4 +1,4 @@
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from argon2 import PasswordHasher
 
@@ -22,7 +22,6 @@ async def create_user(cmd: commands.CreateUser, *, uow: AbstractUnitOfWork, hash
         if users:
             raise exc.DuplicateRecord(f"user with email {cmd.email} exists")
         data_in = cmd.dict()
-        data_in["id"] = uuid4()
         new_user = Users.create_user(data=data_in, hasher=hasher)
         uow.users.add(new_user)
         uow.event_store.add(new_user.generate_event_store())
@@ -41,7 +40,6 @@ async def update_user(cmd: commands.UpdateUser, *, uow: AbstractUnitOfWork, hash
         user.update_user(data, hasher)
         uow.event_store.add(user.generate_event_store())
         await uow.commit()
-        await uow.refresh(user)
         return user
 
 

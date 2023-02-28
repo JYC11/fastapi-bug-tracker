@@ -26,13 +26,12 @@ users = sa.Table(
         postgresql.TIMESTAMP(timezone=True),
         default=sa.func.now(),
         server_default=sa.func.now(),
+        nullable=False,
     ),
     sa.Column(
         "update_dt",
         postgresql.TIMESTAMP(timezone=True),
-        default=sa.func.now(),
         onupdate=sa.func.current_timestamp(),
-        server_default=sa.func.now(),
     ),
     sa.Column("username", sa.String(length=100), nullable=False),
     sa.Column("email", sa.String(length=100), nullable=False),
@@ -59,13 +58,12 @@ tags = sa.Table(
         postgresql.TIMESTAMP(timezone=True),
         default=sa.func.now(),
         server_default=sa.func.now(),
+        nullable=False,
     ),
     sa.Column(
         "update_dt",
         postgresql.TIMESTAMP(timezone=True),
-        default=sa.func.now(),
         onupdate=sa.func.current_timestamp(),
-        server_default=sa.func.now(),
     ),
     sa.Column("name", sa.String(length=50), nullable=False),
 )
@@ -85,13 +83,12 @@ bugs = sa.Table(
         postgresql.TIMESTAMP(timezone=True),
         default=sa.func.now(),
         server_default=sa.func.now(),
+        nullable=False,
     ),
     sa.Column(
         "update_dt",
         postgresql.TIMESTAMP(timezone=True),
-        default=sa.func.now(),
         onupdate=sa.func.current_timestamp(),
-        server_default=sa.func.now(),
     ),
     sa.Column("title", sa.String(length=50), nullable=False),
     sa.Column(
@@ -132,13 +129,12 @@ comments = sa.Table(
         postgresql.TIMESTAMP(timezone=True),
         default=sa.func.now(),
         server_default=sa.func.now(),
+        nullable=False,
     ),
     sa.Column(
         "update_dt",
         postgresql.TIMESTAMP(timezone=True),
-        default=sa.func.now(),
         onupdate=sa.func.current_timestamp(),
-        server_default=sa.func.now(),
     ),
     sa.Column(
         "bug_id",
@@ -174,13 +170,12 @@ bug_tags = sa.Table(
         postgresql.TIMESTAMP(timezone=True),
         default=sa.func.now(),
         server_default=sa.func.now(),
+        nullable=False,
     ),
     sa.Column(
         "update_dt",
         postgresql.TIMESTAMP(timezone=True),
-        default=sa.func.now(),
         onupdate=sa.func.current_timestamp(),
-        server_default=sa.func.now(),
     ),
     sa.Column(
         "tag_id",
@@ -211,6 +206,7 @@ event_store = sa.Table(
         postgresql.TIMESTAMP(timezone=True),
         default=sa.func.now(),
         server_default=sa.func.now(),
+        nullable=False,
     ),
     sa.Column(
         "aggregate_id",

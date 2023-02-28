@@ -15,3 +15,6 @@ class Event:
                 value = str(value)
             out[key] = value
         return out
+
+    def name(self):
+        return self.__repr__().replace("()", "")
