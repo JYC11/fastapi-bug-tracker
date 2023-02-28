@@ -5,7 +5,6 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from app.domain.common_schemas import RefreshRequest
 from app.entrypoints import dependencies as deps
 from app.service import exceptions as service_exc
 from app.service.messagebus import MessageBus
@@ -16,6 +15,7 @@ router = APIRouter()
 
 @router.post(
     "/login",
+    response_model=dto.LoginSuccess,
     status_code=status.HTTP_200_OK,
 )
 async def login(
@@ -41,10 +41,14 @@ async def login(
         )
 
 
-@router.post("/refresh", status_code=status.HTTP_200_OK)
+@router.post(
+    "/refresh",
+    response_model=dto.RefreshSuccess,
+    status_code=status.HTTP_200_OK,
+)
 async def refresh(
     messagebus: MessageBus = Depends(deps.get_message_bus),
-    req: RefreshRequest = Body(...),
+    req: dto.RefreshRequest = Body(...),
 ):
     try:
         cmd = commands.Refresh(
@@ -81,8 +85,9 @@ async def create_user(
 @router.put(
     "/user/{user_id}",
     status_code=status.HTTP_200_OK,
-)  # TODO: add authentication
+)
 async def update_user(
+    token: dict = Depends(deps.decode_token),
     messagebus: MessageBus = Depends(deps.get_message_bus),
     user_id: UUID = Path(..., title="user_id"),
     req: dto.UserUpdateIn = Body(...),
@@ -100,8 +105,9 @@ async def update_user(
 @router.delete(
     "/user/{user_id}",
     status_code=status.HTTP_200_OK,
-)  # TODO: add authentication
+)
 async def delete_user(
+    token: dict = Depends(deps.decode_token),
     messagebus: MessageBus = Depends(deps.get_message_bus),
     user_id: UUID = Path(..., title="user_id"),
 ):
@@ -117,21 +123,23 @@ async def delete_user(
 
 @router.get("/user/{user_id}", status_code=status.HTTP_200_OK)
 async def my_user_page(
+    token: dict = Depends(deps.decode_token),
     session: AsyncSession = Depends(deps.get_reader_session),
-):  # TODO: add authentication
+):
     return "ok"
 
 
-@router.get("/user/comments", status_code=status.HTTP_200_OK)
-async def my_comments():
+@router.get("/user/{user_id}/comments", status_code=status.HTTP_200_OK)
+async def my_comments(
+    token: dict = Depends(deps.decode_token),
+    session: AsyncSession = Depends(deps.get_reader_session),
+):
     return "ok"
 
 
-@router.get("/user/bugs", status_code=status.HTTP_200_OK)
-async def my_bugs():
-    return "ok"
-
-
-@router.get("/user/bugs", status_code=status.HTTP_200_OK)
-async def my_tags():
+@router.get("/user/{user_id}/bugs", status_code=status.HTTP_200_OK)
+async def my_bugs(
+    token: dict = Depends(deps.decode_token),
+    session: AsyncSession = Depends(deps.get_reader_session),
+):
     return "ok"

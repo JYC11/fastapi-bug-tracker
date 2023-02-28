@@ -7,6 +7,22 @@ from pydantic import BaseModel
 from app.domain.enums import RecordStatusEnum, UserTypeEnum
 
 
+class LoginSuccess(BaseModel):
+    message: str
+    token: str
+    refresh_token: str
+
+
+class RefreshRequest(BaseModel):
+    grant_type: str
+    refresh_token: str
+
+
+class RefreshSuccess(BaseModel):
+    message: str
+    token: str
+
+
 class UserCreateIn(BaseModel):
     password: str
     username: str

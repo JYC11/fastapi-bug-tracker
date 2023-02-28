@@ -10,6 +10,7 @@ from sqlalchemy.future import select
 from app.common.settings import settings
 from app.domain.models import Users
 from app.main import app
+from app.tests.e2e.conftest import create_user_and_login
 
 
 def test_health_check(client: TestClient):
@@ -82,9 +83,10 @@ async def test_update_user(
     user_data_in: dict,
     session: AsyncSession,
 ):
-    create_url = test_app.url_path_for("create_user")
-    async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
-        await ac.post(create_url, json=user_data_in)
+    enduser_headers = await create_user_and_login(
+        app=test_app,
+        user_data_in=user_data_in,
+    )
 
     execution = await session.execute(select(Users))
     users: list[Users] = execution.scalars().all()
@@ -94,7 +96,11 @@ async def test_update_user(
 
     update_url = test_app.url_path_for("update_user", user_id=str(user.id))
     async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
-        res = await ac.put(update_url, json=user_data_in)
+        res = await ac.put(
+            update_url,
+            headers=enduser_headers,
+            json=user_data_in,
+        )
     assert res.status_code == HTTPStatus.OK
     # TODO: unhappy path test cases
 
@@ -105,9 +111,10 @@ async def test_delete_user(
     user_data_in: dict,
     session: AsyncSession,
 ):
-    create_url = test_app.url_path_for("create_user")
-    async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
-        await ac.post(create_url, json=user_data_in)
+    enduser_headers = await create_user_and_login(
+        app=test_app,
+        user_data_in=user_data_in,
+    )
 
     execution = await session.execute(select(Users))
     users: list[Users] = execution.scalars().all()
@@ -115,6 +122,9 @@ async def test_delete_user(
 
     delete_url = test_app.url_path_for("delete_user", user_id=str(user.id))
     async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
-        res = await ac.delete(delete_url)
+        res = await ac.delete(
+            delete_url,
+            headers=enduser_headers,
+        )
     assert res.status_code == HTTPStatus.OK
     # TODO: unhappy path test cases
