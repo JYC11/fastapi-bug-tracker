@@ -15,7 +15,7 @@ from app.service.users import commands, events
 
 async def login(cmd: commands.Login, *, uow: AbstractUnitOfWork, hasher: PasswordHasher):
     async with uow:
-        users: list[Users] = await uow.users.list(filters={"email__eq": cmd.email})
+        users: list[Users] = await uow.users.list(email__eq=cmd.email)
         if not users:
             raise exc.Unauthorized("email or password is incorrect")
 
@@ -84,10 +84,8 @@ async def refresh(cmd: commands.Refresh, *, uow: AbstractUnitOfWork):
 async def create_user(cmd: commands.CreateUser, *, uow: AbstractUnitOfWork, hasher: PasswordHasher):
     async with uow:
         users: list[Users] = await uow.users.list(
-            filters={
-                "email__eq": cmd.email,
-                "user_status__eq": enums.RecordStatusEnum.ACTIVE,
-            }
+            email__eq=cmd.email,
+            user_status__eq=enums.RecordStatusEnum.ACTIVE,
         )
         if users:
             raise exc.DuplicateRecord(f"user with email {cmd.email} exists")
@@ -96,8 +94,7 @@ async def create_user(cmd: commands.CreateUser, *, uow: AbstractUnitOfWork, hash
         uow.users.add(new_user)
         uow.event_store.add(new_user.generate_event_store())
         await uow.commit()
-        _id = new_user.id
-        return _id
+        return new_user.id
 
 
 async def update_user(cmd: commands.UpdateUser, *, uow: AbstractUnitOfWork, hasher: PasswordHasher):
@@ -109,11 +106,9 @@ async def update_user(cmd: commands.UpdateUser, *, uow: AbstractUnitOfWork, hash
             raise exc.ItemNotFound("user is deleted")
         data = cmd.dict(exclude_unset=True, exclude_none=True)
         user.update_user(data, hasher)
-        uow.users.seen.add(user)
         uow.event_store.add(user.generate_event_store())
         await uow.commit()
-        _id = user.id
-        return _id
+        return user.id
 
 
 async def soft_delete_user(cmd: commands.SoftDeleteUser, *, uow: AbstractUnitOfWork):
@@ -124,7 +119,6 @@ async def soft_delete_user(cmd: commands.SoftDeleteUser, *, uow: AbstractUnitOfW
         if not user.is_active:
             return
         user.delete_user()
-        uow.users.seen.add(user)
         uow.event_store.add(user.generate_event_store())
         await uow.commit()
         return

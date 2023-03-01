@@ -362,7 +362,7 @@ def comment_data_list(comment_data_to_generate):
 
 @pytest_asyncio.fixture
 def bug_title() -> str:
-    return faker.setence(nb_words=4, variable_nb_words=False)
+    return faker.sentence(nb_words=4, variable_nb_words=False)
 
 
 @pytest_asyncio.fixture
@@ -371,7 +371,7 @@ def bug_description() -> str:
 
 
 @pytest_asyncio.fixture
-def bug_report_is_edited() -> bool:
+def bug_is_edited() -> bool:
     return False
 
 
@@ -383,6 +383,11 @@ def images() -> list[str]:
 @pytest_asyncio.fixture
 def urgency() -> enums.UrgencyEnum:
     return random.choice([e for e in enums.UrgencyEnum])
+
+
+@pytest_asyncio.fixture
+def environment() -> enums.EnvironmentEnum:
+    return random.choice([e for e in enums.EnvironmentEnum])
 
 
 @pytest_asyncio.fixture
@@ -401,11 +406,12 @@ def version() -> int:
 
 
 @pytest_asyncio.fixture
-def bug_report_data_in(
+def bug_data_in(
     bug_title,
     bug_description,
-    bug_report_is_edited,
+    bug_is_edited,
     images,
+    environment,
     urgency,
     status,
     record_status,
@@ -416,7 +422,8 @@ def bug_report_data_in(
         "author_id": uuid4(),  # obviously replace with actual user id
         "assignee_id": uuid4(),  # obviously replace with actual user id
         "description": bug_description,
-        "edited": bug_report_is_edited,
+        "edited": bug_is_edited,
+        "environment": environment,
         "images": images,
         "urgency": urgency,
         "status": status,
@@ -426,12 +433,16 @@ def bug_report_data_in(
 
 
 @pytest_asyncio.fixture
-def bug_report_data_to_generate() -> int:
+def bug_data_to_generate() -> int:
     return 12
 
 
 @pytest_asyncio.fixture
-def bug_report_list(bug_report_data_to_generate) -> list[dict[str, Any]]:
+def bug_list(bug_data_to_generate) -> list[dict[str, Any]]:
+    env_list = [e for e in enums.EnvironmentEnum]
+    urgency_list = [e for e in enums.UrgencyEnum]
+    status_list = [e for e in enums.BugStatusEnum]
+    record_status_list = [e for e in enums.RecordStatusEnum]
     return [
         {
             "title": faker.setence(nb_words=4, variable_nb_words=False),
@@ -440,12 +451,13 @@ def bug_report_list(bug_report_data_to_generate) -> list[dict[str, Any]]:
             "description": faker.paragraph(nb_sentences=5),
             "edited": False,
             "images": [faker.image_url() for _ in range(3)],
-            "urgency": random.choice([e for e in enums.UrgencyEnum]),
-            "status": enums.BugStatusEnum.NEW,
-            "record_status": enums.RecordStatusEnum.ACTIVE,
+            "environment": random.choice(env_list),
+            "urgency": random.choice(urgency_list),
+            "status": random.choice(status_list),
+            "record_status": random.choice(record_status_list),
             "version": 1,
         }
-        for _ in range(bug_report_data_to_generate)
+        for _ in range(bug_data_to_generate)
     ]
 
 

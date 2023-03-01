@@ -36,9 +36,9 @@ def test_user_creation(user_data_in: dict, password_hasher: PasswordHasher):
     )
 
     assert len(new_user.events) == 1, isinstance(new_user.events[0], UserCreated)
-    blank_user = Users()
+
     created_event = new_user.events[0]
-    user_from_event = created_event.apply(blank_user)
+    user_from_event = created_event.apply(Users())
     verify(
         user_from_event,
         user_data_in,
@@ -51,12 +51,14 @@ def test_user_creation(user_data_in: dict, password_hasher: PasswordHasher):
 def test_user_update(user_data_in: dict, password_hasher: PasswordHasher):
     new_user = Users.create_user(user_data_in, password_hasher)
     update_data = copy.deepcopy(user_data_in)
+    update_data["id"] = new_user.id
     update_data["is_admin"] = True
     new_user.update_user(update_data, password_hasher)
     assert new_user.is_admin is True
 
     assert len(new_user.events) == 2
-    assert isinstance(new_user.events[0], UserCreated), isinstance(new_user.events[1], UserUpdated)
+    assert isinstance(new_user.events[0], UserCreated)
+    assert isinstance(new_user.events[1], UserUpdated)
 
     user_from_event = Users()
     for event in new_user.events:
@@ -71,7 +73,8 @@ def test_user_delete(user_data_in: dict, password_hasher: PasswordHasher):
     assert new_user.user_status == enums.RecordStatusEnum.DELETED
 
     assert len(new_user.events) == 2
-    assert isinstance(new_user.events[0], UserCreated), isinstance(new_user.events[1], UserSoftDeleted)
+    assert isinstance(new_user.events[0], UserCreated)
+    assert isinstance(new_user.events[1], UserSoftDeleted)
 
     user_from_event = Users()
     for event in new_user.events:

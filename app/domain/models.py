@@ -10,6 +10,16 @@ from argon2.exceptions import VerifyMismatchError
 
 from app.domain.enums import BugStatusEnum, EnvironmentEnum, RecordStatusEnum, UrgencyEnum, UserTypeEnum
 from app.domain.events import Event
+from app.service.bugs.events import (
+    BugCreated,
+    BugSoftDeleted,
+    BugUpdated,
+    CommentCreated,
+    CommentDeleted,
+    CommentUpdated,
+    Downvoted,
+    Upvoted,
+)
 from app.service.users.events import UserCreated, UserSoftDeleted, UserUpdated
 
 
@@ -113,7 +123,6 @@ class Users(Base):
             data["security_question_answer"] = hasher.hash(security_question_answer)
         self.update(data)
         event = UserUpdated(**data)
-        event.id = self.id
         self.events.append(event)
         return self
 
@@ -136,10 +145,10 @@ class Comments(Base):
     vote_count: int = field(default_factory=lambda: 0)
     edited: bool = field(default_factory=lambda: False)
 
-    def increase_vote_count(self):
+    def upvote(self):
         self.vote_count += 1
 
-    def decrease_vote_count(self):
+    def downvote(self):
         self.vote_count -= 1
 
     def set_edited(self):
@@ -156,7 +165,7 @@ class Bugs(Base):
     title: str = field(default_factory=lambda: "")
     author_id: UUID = field(default_factory=lambda: uuid4())
     author: Users = field(default_factory=lambda: Users())
-    assignee_id: UUID = field(default_factory=lambda: uuid4())
+    assignee_id: UUID | None = field(default_factory=lambda: uuid4())
     assignee: Users = field(default_factory=lambda: Users())
     description: str = field(default_factory=lambda: "")
     environment: EnvironmentEnum = field(default_factory=lambda: EnvironmentEnum.STAGE)
@@ -165,7 +174,7 @@ class Bugs(Base):
     record_status: RecordStatusEnum = field(default_factory=lambda: RecordStatusEnum.ACTIVE)
     version: int = field(default_factory=lambda: 1)
     edited: bool = field(default_factory=lambda: False)
-    images: list[str] = field(default_factory=list)
+    images: list[str] = field(default_factory=list)  # TODO: add image upload thing
     comments: list[Comments] = field(default_factory=list)
     events: deque[Event] = field(default_factory=deque)
 
@@ -175,53 +184,74 @@ class Bugs(Base):
     def set_status(self, status: BugStatusEnum):
         self.status = status
 
-    def set_record_status(self, record_status: RecordStatusEnum):
-        self.record_status = record_status
-
     def set_edited(self):
         self.edited = True
 
-    def update_report(self, data: dict[str, Any]):
+    @classmethod
+    def create_bug(self, data: dict[str, Any]):
+        bug = self.create(data)
+        bug.events.append(BugCreated(id=bug.id, **data))
+        return bug
+
+    def update_bug(self, data: dict[str, Any]):
         self.update(data)
         self.set_edited()
-        return
+        event = BugUpdated(**data)
+        event.edited = True
+        self.events.append(event)
+        return self
 
-    def remove_bug_report(self):
-        self.set_record_status(RecordStatusEnum.DELETED)
-        # emit event
-        return
+    def delete_bug(self):
+        self.record_status = RecordStatusEnum.DELETED
+        self.events.append(BugSoftDeleted(id=self.id))
 
-    def add_comment(self, data: dict[str, Any]):
+    def add_comment(self, data: dict[str, Any]) -> Comments:
         comment = Comments.create(data)
         self.comments.append(comment)
-        # emit event
-        return
+        self.events.append(CommentCreated(id=comment.id, **data))
+        return comment
 
-    def _find_comment(self, ident: UUID) -> Comments | None:
+    def find_comment(self, ident: UUID) -> Comments | None:
         comment = [c for c in self.comments if c.id == ident]
         if comment:
             return comment[0]
         return None
 
-    def update_comment(self, ident: UUID, data: dict[str, Any]):
-        comment = self._find_comment(ident)
+    def update_comment(self, ident: UUID, data: dict[str, Any]) -> Comments | None:
+        comment = self.find_comment(ident)
         if comment:
             comment.update_comment(data)
-            # emit event
-            return True
-        return False
+            event = CommentUpdated(**data)
+            event.edited = True
+            self.events.append(event)
+            return comment
+        return None
 
-    def remove_comment(self, ident: UUID):
-        comment = self._find_comment(ident)
+    def upvote_comment(self, ident: UUID):
+        comment = self.find_comment(ident)
+        if comment:
+            comment.upvote()
+            self.events.append(Upvoted(comment_id=ident))
+            return comment
+        return None
+
+    def downvote_comment(self, ident: UUID):
+        comment = self.find_comment(ident)
+        if comment:
+            comment.downvote()
+            self.events.append(Downvoted(comment_id=ident))
+            return comment
+        return None
+
+    def delete_comment(self, ident: UUID):
+        comment = self.find_comment(ident)
         if comment:
             idx = self.comments.index(comment)
             self.comments.pop(idx)
-            # emit event
-            return True
-        return False
+            self.events.append(CommentDeleted(id=comment.id))
 
 
-# future feature, just get the main stuff done for now
+# TODO: future feature, just get the main stuff done for now
 # @dataclass(repr=True, eq=False)
 # class Watchers:
 #     id: UUID = field(default_factory=lambda: uuid4())

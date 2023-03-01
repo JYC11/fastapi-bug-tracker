@@ -1,12 +1,14 @@
-from abc import abstractmethod
 from typing import Any
 from uuid import UUID
 
 
 class Event:
-    @abstractmethod
     def apply(self, model: Any):
-        pass
+        for key in self.__dict__.keys():
+            if hasattr(model, key):
+                val = getattr(self, key)
+                setattr(model, key, val)
+        return model
 
     def dict(self):
         out = {}

@@ -29,7 +29,7 @@ class FakeRepository(Generic[ModelType], AbstractRepository):
             del self.session[ident]
         return
 
-    async def _list(self, filters: dict[str, Any] | None = None):
+    async def _list(self, filters: dict[str, Any] | None = None, *args):
         # customise for each individual repository
         return list(self.session.values())
 
@@ -38,13 +38,13 @@ class FakeUserRepository(FakeRepository[models.Users]):
     def __init__(self):
         super(FakeUserRepository, self).__init__(models.Users)
 
-    async def _list(self, filters: dict[str, Any] | None = None):
+    async def _list(self, *args, **kwargs):
         everything: list[models.Users] = list(self.session.values())
-        if not filters:
+        if not args and not kwargs:
             return everything
         else:
             out: list[Any] = []
-            for key, val in filters.items():
+            for key, val in kwargs.items():
                 column, operator = key.split("__")
                 try:
                     getattr(self.model, column)
