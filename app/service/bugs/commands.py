@@ -13,7 +13,9 @@ class CreateBug(Command):
     urgency: UrgencyEnum
     status: BugStatusEnum
     record_status: RecordStatusEnum
+    version: int = 1
     edited: bool = False
+    images: list[str]
 
 
 class UpdateBug(Command):

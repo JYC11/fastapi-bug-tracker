@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.selectable import Select
 
 from app.adapters.repository import SqlAlchemyRepository
@@ -12,7 +12,7 @@ class BugRepository(SqlAlchemyRepository[Bugs]):
         super(BugRepository, self).__init__(session, Bugs)
         self.query: Select = (
             select(Bugs)
-            .options(joinedload(Bugs.comments))
+            .options(selectinload(Bugs.comments))
             .options(selectinload(Bugs.author))
             .options(selectinload(Bugs.assignee))
         )

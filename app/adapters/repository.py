@@ -50,6 +50,7 @@ class AbstractRepository(abc.ABC):
         return await self._list(*args, **kwargs)
 
 
+# TODO: add way of doing joins?
 class SqlAlchemyRepository(Generic[ModelType], AbstractRepository):
     def __init__(self, session: AsyncSession, model: Type[ModelType]):
         self.session = session

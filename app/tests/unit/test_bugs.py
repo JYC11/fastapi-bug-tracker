@@ -103,6 +103,22 @@ def test_comment_update(bug_data_in: dict, comment_data_in: dict):
     assert comment_from_event.edited is True
 
 
+def test_comment_upvote_downvote(bug_data_in: dict, comment_data_in: dict):
+    new_bug = Bugs.create_bug(bug_data_in)
+    comment_data_in["bug_id"] = new_bug.id
+    comment = new_bug.add_comment(comment_data_in)
+
+    new_bug.upvote_comment(comment.id)
+    assert new_bug.comments[0].vote_count == 1
+    assert len(new_bug.events) == 3
+    assert isinstance(new_bug.events[-1], events.Upvoted)
+
+    new_bug.downvote_comment(comment.id)
+    assert new_bug.comments[0].vote_count == 0
+    assert len(new_bug.events) == 4
+    assert isinstance(new_bug.events[-1], events.Downvoted)
+
+
 def test_comment_delete(bug_data_in: dict, comment_data_in: dict):
     new_bug = Bugs.create_bug(bug_data_in)
     comment_data_in["bug_id"] = new_bug.id
