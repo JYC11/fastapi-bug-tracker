@@ -27,7 +27,7 @@ class UpdateUser(Command):
     security_question_answer: str | None
 
 
-class DeleteUser(Command):
+class SoftDeleteUser(Command):
     id: UUID
 
 

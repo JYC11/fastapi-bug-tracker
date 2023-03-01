@@ -102,6 +102,9 @@ async def test_update_user(
             json=user_data_in,
         )
     assert res.status_code == HTTPStatus.OK
+    execution1 = await session.execute(select(Users))
+    users1: list[Users] = execution1.scalars().all()
+    assert users1
     # TODO: unhappy path test cases
 
 

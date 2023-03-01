@@ -123,15 +123,21 @@ async def clear_tables_of_data(session: AsyncSession):
 @pytest_asyncio.fixture(scope="function")
 async def session_factory(async_engine: AsyncEngine):
     async with async_engine.connect() as conn:
-        session_factory: async_scoped_session = async_scoped_session(
-            sessionmaker(
-                conn,
-                expire_on_commit=False,
-                autoflush=False,
-                class_=AsyncSession,
-            ),
-            scopefunc=asyncio.current_task,
+        session_factory = sessionmaker(
+            conn,
+            expire_on_commit=False,
+            autoflush=False,
+            class_=AsyncSession,
         )
+        # session_factory: async_scoped_session = async_scoped_session(
+        #     sessionmaker(
+        #         conn,
+        #         expire_on_commit=False,
+        #         autoflush=False,
+        #         class_=AsyncSession,
+        #     ),
+        #     scopefunc=asyncio.current_task,
+        # )
         try:
             yield session_factory
         finally:
@@ -142,10 +148,7 @@ async def session_factory(async_engine: AsyncEngine):
 @pytest_asyncio.fixture(scope="function")
 async def session(session_factory):
     async with session_factory() as _session:
-        try:
-            yield _session
-        finally:
-            await clear_tables_of_data(_session)
+        yield _session
 
 
 # DB STUFF ENDS HERE
@@ -174,17 +177,19 @@ def messagebus(
     use_fake_uow: bool,
     uow: AbstractUnitOfWork,
     fake_uow: AbstractUnitOfWork,
+    session_factory: async_scoped_session,
 ) -> MessageBus:
     MESSAGEBUS = MessageBusFactory(
         uow=fake_uow if use_fake_uow else uow,
         password_hasher=PasswordHasher(),
+        session_factory=session_factory,
     )
     return MESSAGEBUS()
 
 
 # TEST CLIENT FROM HERE
 @pytest.fixture(scope="function")
-def client(messagebus: MessageBus, session: AsyncSession, event_loop):
+def client(messagebus: MessageBus, session: AsyncSession):
     from app.main import app
 
     # dependency injection here
@@ -196,7 +201,7 @@ def client(messagebus: MessageBus, session: AsyncSession, event_loop):
 
 
 @pytest.fixture(scope="function")
-def test_app(messagebus: MessageBus, session: AsyncSession, event_loop):
+def test_app(messagebus: MessageBus, session: AsyncSession):
     # dependency injection here
     app.dependency_overrides[deps.get_message_bus] = lambda: messagebus
     app.dependency_overrides[deps.get_reader_session] = lambda: session

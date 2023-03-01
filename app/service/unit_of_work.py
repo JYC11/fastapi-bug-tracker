@@ -16,6 +16,7 @@ DEFAULT_TRANSACTIONAL_FACTORY = async_transactional_session_factory
 
 class AbstractUnitOfWork(abc.ABC):
     async def __aenter__(self) -> "AbstractUnitOfWork":
+        self.session: AsyncSession
         self.bugs: AbstractRepository
         self.tags: AbstractRepository
         self.users: AbstractRepository

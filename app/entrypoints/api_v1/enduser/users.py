@@ -112,7 +112,7 @@ async def delete_user(
     user_id: UUID = Path(..., title="user_id"),
 ):
     try:
-        cmd = commands.DeleteUser(id=user_id)
+        cmd = commands.SoftDeleteUser(id=user_id)
         await messagebus.handle(message=cmd)
     except service_exc.ItemNotFound as e:
         raise HTTPException(

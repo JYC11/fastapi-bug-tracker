@@ -1,8 +1,10 @@
 import inspect
 from collections import deque
-from typing import Any, Callable, Type, Union
+from typing import Any, Callable, Optional, Type, Union
 
 from argon2 import PasswordHasher
+from sqlalchemy.ext.asyncio import async_scoped_session
+from sqlalchemy.orm import sessionmaker
 
 from app.domain.commands import Command
 from app.domain.events import Event
@@ -72,28 +74,35 @@ def inject_dependencies(handler: Callable, dependencies: dict[str, Any]):
 
 
 EVENT_HANDLERS: dict[Type[Event], list[Callable]] = {
-    user_events.UserCreated: [],
-    user_events.UserUpdated: [],
-    user_events.UserDeleted: [],
+    user_events.UserCreated: [],  # [user_handlers.insert_into_user_read_model],
+    user_events.UserUpdated: [],  # [user_handlers.update_user_read_model],
+    user_events.UserSoftDeleted: [],  # [user_handlers.soft_delete_user_read_model],
 }
 COMMAND_HANDLERS: dict[Type[Command], Callable] = {
     user_commands.CreateUser: user_handlers.create_user,
     user_commands.UpdateUser: user_handlers.update_user,
-    user_commands.DeleteUser: user_handlers.delete_user,
+    user_commands.SoftDeleteUser: user_handlers.soft_delete_user,
     user_commands.Login: user_handlers.login,
     user_commands.Refresh: user_handlers.refresh,
 }
 
 
 class MessageBusFactory:
-    def __init__(self, uow: AbstractUnitOfWork, password_hasher: PasswordHasher):
+    def __init__(
+        self,
+        uow: AbstractUnitOfWork,
+        password_hasher: PasswordHasher,
+        session_factory: async_scoped_session | Optional[sessionmaker],
+    ):
         self.uow = uow
         self.password_hasher = password_hasher
+        self.session_factory = session_factory
 
     def __call__(self) -> MessageBus:
         dependencies = {
             "uow": self.uow,
             "hasher": self.password_hasher,
+            "session_factory": self.session_factory,
         }
         injected_event_handlers: dict[Type[Event], list[Callable]] = {
             event_type: [inject_dependencies(handler, dependencies) for handler in handlers]

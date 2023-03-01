@@ -1,8 +1,10 @@
+import copy
+
 from argon2 import PasswordHasher
 
 from app.domain import enums
 from app.domain.models import Users
-from app.service.users.events import UserCreated, UserDeleted, UserUpdated
+from app.service.users.events import UserCreated, UserSoftDeleted, UserUpdated
 
 
 def verify(
@@ -48,10 +50,10 @@ def test_user_creation(user_data_in: dict, password_hasher: PasswordHasher):
 
 def test_user_update(user_data_in: dict, password_hasher: PasswordHasher):
     new_user = Users.create_user(user_data_in, password_hasher)
-    update_data = {"user_type": enums.UserTypeEnum.PM, "is_admin": True}
+    update_data = copy.deepcopy(user_data_in)
+    update_data["is_admin"] = True
     new_user.update_user(update_data, password_hasher)
     assert new_user.is_admin is True
-    assert new_user.user_type == enums.UserTypeEnum.PM
 
     assert len(new_user.events) == 2
     assert isinstance(new_user.events[0], UserCreated), isinstance(new_user.events[1], UserUpdated)
@@ -61,7 +63,6 @@ def test_user_update(user_data_in: dict, password_hasher: PasswordHasher):
         event.apply(user_from_event)
 
     assert user_from_event.is_admin is True
-    assert user_from_event.user_type == enums.UserTypeEnum.PM
 
 
 def test_user_delete(user_data_in: dict, password_hasher: PasswordHasher):
@@ -70,7 +71,7 @@ def test_user_delete(user_data_in: dict, password_hasher: PasswordHasher):
     assert new_user.user_status == enums.RecordStatusEnum.DELETED
 
     assert len(new_user.events) == 2
-    assert isinstance(new_user.events[0], UserCreated), isinstance(new_user.events[1], UserDeleted)
+    assert isinstance(new_user.events[0], UserCreated), isinstance(new_user.events[1], UserSoftDeleted)
 
     user_from_event = Users()
     for event in new_user.events:

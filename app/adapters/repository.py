@@ -11,6 +11,7 @@ ModelType = TypeVar("ModelType", bound=object)
 
 class AbstractRepository(abc.ABC):
     def __init__(self):
+        self.session: AsyncSession | Any
         self.seen = set()
 
     @abc.abstractmethod

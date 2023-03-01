@@ -15,6 +15,7 @@ from app.service.unit_of_work import SqlAlchemyUnitOfWork
 MESSAGEBUS = MessageBusFactory(
     uow=SqlAlchemyUnitOfWork(),
     password_hasher=PasswordHasher(),
+    session_factory=async_autocommit_session_factory,
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.api_v1_login_url)

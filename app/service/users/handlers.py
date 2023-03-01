@@ -1,14 +1,18 @@
 from uuid import UUID
 
 from argon2 import PasswordHasher
+from sqlalchemy.ext.asyncio import async_scoped_session
+from sqlalchemy.future import select
+from sqlalchemy.orm import sessionmaker
 
 from app.common import exceptions as common_exc
 from app.common.security import create_jwt_token, validate_jwt_token
 from app.domain import enums
 from app.domain.models import Users
+from app.domain.read_models import UserReadModel
 from app.service import exceptions as exc
 from app.service.unit_of_work import AbstractUnitOfWork
-from app.service.users import commands
+from app.service.users import commands, events
 
 
 async def login(cmd: commands.Login, *, uow: AbstractUnitOfWork, hasher: PasswordHasher):
@@ -99,19 +103,21 @@ async def create_user(cmd: commands.CreateUser, *, uow: AbstractUnitOfWork, hash
 
 async def update_user(cmd: commands.UpdateUser, *, uow: AbstractUnitOfWork, hasher: PasswordHasher):
     async with uow:
-        user: Users | None = await uow.users.get(cmd.id)
-        if not user:
-            raise exc.ItemNotFound(f"user with id {cmd.id} not found")
-        if not user.is_active:
-            raise exc.ItemNotFound("user is deleted")
-        data = cmd.dict(exclude_unset=True, exclude_none=True)
-        user.update_user(data, hasher)
-        uow.event_store.add(user.generate_event_store())
-        await uow.commit()
+        async with uow.users.session.begin():
+            user: Users | None = await uow.users.get(cmd.id)
+            if not user:
+                raise exc.ItemNotFound(f"user with id {cmd.id} not found")
+            if not user.is_active:
+                raise exc.ItemNotFound("user is deleted")
+            data = cmd.dict(exclude_unset=True, exclude_none=True)
+            user.update_user(data, hasher)
+            uow.users.seen.add(user)
+            uow.event_store.add(user.generate_event_store())
+            # await uow.session.commit()
         return user
 
 
-async def delete_user(cmd: commands.DeleteUser, *, uow: AbstractUnitOfWork):
+async def soft_delete_user(cmd: commands.SoftDeleteUser, *, uow: AbstractUnitOfWork):
     async with uow:
         user: Users | None = await uow.users.get(cmd.id)
         if not user:
@@ -119,6 +125,56 @@ async def delete_user(cmd: commands.DeleteUser, *, uow: AbstractUnitOfWork):
         if not user.is_active:
             return
         user.delete_user()
+        uow.users.seen.add(user)
         uow.event_store.add(user.generate_event_store())
         await uow.commit()
         return
+
+
+async def insert_into_user_read_model(
+    event: events.UserCreated,
+    *,
+    session_factory: async_scoped_session | sessionmaker,
+):
+    async with session_factory() as session:
+        new_row = UserReadModel(
+            id=event.id,
+            username=event.username,
+            email=event.email,
+            user_type=event.user_type,
+            user_status=event.user_status,
+            is_admin=event.is_admin,
+        )
+        session.add(new_row)
+        await session.commit()
+
+
+async def update_user_read_model(
+    event: events.UserUpdated,
+    *,
+    session_factory: async_scoped_session | sessionmaker,
+):
+    async with session_factory() as session:
+        query = select(UserReadModel).where(UserReadModel.id == event.id)
+        execution = await session.execute(query)
+        row: UserReadModel | None = execution.scalars().first()
+        if row:
+            for key in event.__dict__.keys():
+                val = getattr(event, key)
+                if val is not None:
+                    setattr(row, key, val)
+            await session.commit()
+
+
+async def soft_delete_user_read_model(
+    event: events.UserSoftDeleted,
+    *,
+    session_factory: async_scoped_session | sessionmaker,
+):
+    async with session_factory() as session:
+        query = select(UserReadModel).where(UserReadModel.id == event.id)
+        execution = await session.execute(query)
+        row: UserReadModel | None = execution.scalars().first()
+        if row:
+            row.user_status = event.user_status
+            await session.commit()

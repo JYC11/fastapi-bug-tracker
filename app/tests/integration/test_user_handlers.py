@@ -62,8 +62,8 @@ async def test_update_user_with_handlers(
         assert found_events1[1].event_name == "UserUpdated"
 
     # in essence, the delete handler is just the update handler but specialised
-    delete_cmd = commands.DeleteUser(id=user.id)
-    await handlers.delete_user(delete_cmd, uow=uow)
+    delete_cmd = commands.SoftDeleteUser(id=user.id)
+    await handlers.soft_delete_user(delete_cmd, uow=uow)
     async with uow:
         deleted_user: list[Users] = await uow.users.list()
         found_events2: list[EventStore] = await uow.event_store.get(user.id)
@@ -71,7 +71,7 @@ async def test_update_user_with_handlers(
         assert found_events2, len(found_events2) == 3
         assert found_events2[0].event_name == "UserCreated"
         assert found_events2[1].event_name == "UserUpdated"
-        assert found_events2[2].event_name == "UserDeleted"
+        assert found_events2[2].event_name == "UserSoftDeleted"
 
     # unhappy path: update handler not found test case
     update_cmd.id = uuid4()
@@ -84,7 +84,7 @@ async def test_update_user_with_handlers(
     # unhappy path: delete handler not found test case
     delete_cmd.id = uuid4()
     try:
-        await handlers.delete_user(delete_cmd, uow=uow)
+        await handlers.soft_delete_user(delete_cmd, uow=uow)
         assert False
     except service_exc.ItemNotFound:
         assert True
@@ -133,8 +133,8 @@ async def test_login_handler(
     except service_exc.Unauthorized:
         assert True
 
-    delete_cmd = commands.DeleteUser(id=user.id)
-    await handlers.delete_user(delete_cmd, uow=uow)
+    delete_cmd = commands.SoftDeleteUser(id=user.id)
+    await handlers.soft_delete_user(delete_cmd, uow=uow)
     try:
         deleted = commands.Login(email=user.email, password=password)
         await handlers.login(deleted, uow=uow, hasher=password_hasher)

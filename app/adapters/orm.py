@@ -5,7 +5,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import registry, relationship
 
-from app.domain import models
+from app.domain import models, read_models
 
 metadata = sa.MetaData()
 mapper_registry = registry(metadata=metadata)
@@ -217,6 +217,40 @@ event_store = sa.Table(
     sa.Column("event_data", sa.JSON, nullable=False),
 )
 
+user_read_model = sa.Table(
+    "bug_tracker_user_read_model",
+    mapper_registry.metadata,
+    sa.Column(
+        "id",
+        postgresql.UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+        index=True,
+    ),
+    sa.Column(
+        "create_dt",
+        postgresql.TIMESTAMP(timezone=True),
+        default=sa.func.now(),
+        server_default=sa.func.now(),
+        nullable=False,
+    ),
+    sa.Column(
+        "update_dt",
+        postgresql.TIMESTAMP(timezone=True),
+        onupdate=sa.func.current_timestamp(),
+    ),
+    sa.Column("username", sa.String(length=100), nullable=False),
+    sa.Column("email", sa.String(length=100), nullable=False),
+    sa.Column("user_type", sa.String(length=50), nullable=False),
+    sa.Column("user_status", sa.String(length=50), nullable=False),
+    sa.Column("is_admin", sa.Boolean),
+    sa.Column("comment_count", sa.Integer, default=0, nullable=False),
+    sa.Column("bugs_raised_count", sa.Integer, default=0, nullable=False),
+    sa.Column("bugs_assigned_to_count", sa.Integer, default=0, nullable=False),
+    sa.Column("bugs_closed_count", sa.Integer, default=0, nullable=False),
+    sa.Column("votes_count", sa.Integer, default=0, nullable=False),
+)
+
 
 @sa.event.listens_for(models.Bugs, "load")
 def receive_load_bugs_application_queue(bugs: models.Bugs, _):
@@ -311,4 +345,8 @@ def start_mappers():
     mapper_registry.map_imperatively(
         models.EventStore,
         event_store,
+    )
+    mapper_registry.map_imperatively(
+        read_models.UserReadModel,
+        user_read_model,
     )

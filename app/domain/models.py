@@ -10,7 +10,7 @@ from argon2.exceptions import VerifyMismatchError
 
 from app.domain.enums import BugStatusEnum, RecordStatusEnum, UrgencyEnum, UserTypeEnum
 from app.domain.events import Event
-from app.service.users.events import UserCreated, UserDeleted, UserUpdated
+from app.service.users.events import UserCreated, UserSoftDeleted, UserUpdated
 
 
 @dataclass(repr=True, eq=False)
@@ -111,14 +111,15 @@ class Users(Base):
         security_question_answer = data.get("security_question_answer")
         if security_question_answer is not None:
             data["security_question_answer"] = hasher.hash(security_question_answer)
+        self.update(data)
         event = UserUpdated(**data)
         event.id = self.id
         self.events.append(event)
-        return self.update(data)
+        return self
 
     def delete_user(self):
         self.user_status = RecordStatusEnum.DELETED
-        self.events.append(UserDeleted(id=self.id))
+        self.events.append(UserSoftDeleted(id=self.id))
         return self
 
     def set_password(self, password: str, hasher: PasswordHasher):

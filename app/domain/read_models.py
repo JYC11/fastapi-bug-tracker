@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
@@ -6,41 +6,47 @@ from app.domain.enums import BugStatusEnum, RecordStatusEnum, UrgencyEnum, UserT
 
 
 @dataclass
-class UserView:
-    user_create_dt: datetime
-    user_update_dt: datetime
+class UserReadModel:
+    id: UUID
+    create_dt: datetime = field(init=False, repr=True)
+    update_dt: datetime | None = field(init=False, repr=True)
     username: str
     email: str
     user_type: UserTypeEnum
     user_status: RecordStatusEnum
     is_admin: bool
-    comment_count: int
-    bugs_raised_count: int
-    bugs_assigned_to_count: int
-    bugs_closed_count: int
-    votes_count: int
+    comment_count: int = field(default_factory=lambda: 0)
+    bugs_raised_count: int = field(default_factory=lambda: 0)
+    bugs_assigned_to_count: int = field(default_factory=lambda: 0)
+    bugs_closed_count: int = field(default_factory=lambda: 0)
+    votes_count: int = field(default_factory=lambda: 0)
 
 
 @dataclass
-class CommentView:
-    user_create_dt: datetime
-    user_update_dt: datetime
-    username: str
-    email: str
-    user_type: UserTypeEnum
-    user_status: RecordStatusEnum
-    is_admin: bool
+class CommentReadModel:
+    bug_id: UUID
+    comment_id: UUID
     comment_create_dt: datetime
     comment_update_dt: datetime
     text: str
     vote_count: int
     edited: bool
+    user_id: UUID
+    user_create_dt: datetime
+    user_update_dt: datetime
+    username: str
+    email: str
+    user_type: UserTypeEnum
+    user_status: RecordStatusEnum
+    is_admin: bool
 
 
 @dataclass
-class BugsView:
+class BugsReadModel:
+    bug_id: UUID
     bug_created_dt: datetime
     bug_updated_dt: datetime
+    title: str
     author_id: UUID
     assigned_user_id: UUID
     description: str
