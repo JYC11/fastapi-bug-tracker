@@ -6,6 +6,7 @@ from jose import ExpiredSignatureError, jwt
 
 from app.common import exceptions as exc
 from app.common.settings import settings
+from app.domain.common_schemas import Token
 
 
 def create_jwt_token(
@@ -29,7 +30,8 @@ def create_jwt_token(
 
 def validate_jwt_token(token: str):
     try:
-        return jwt.decode(token=token, key=settings.jwt_settings.secret_key.get_secret_value())
+        decoded_token = jwt.decode(token=token, key=settings.jwt_settings.secret_key.get_secret_value())
+        return Token(**decoded_token)
     except ExpiredSignatureError:
         raise exc.TokenExpired("token has expired")
     except Exception as e:

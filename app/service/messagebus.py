@@ -1,10 +1,8 @@
 import inspect
 from collections import deque
-from typing import Any, Callable, Optional, Type, Union
+from typing import Any, Callable, Type, Union
 
 from argon2 import PasswordHasher
-from sqlalchemy.ext.asyncio import async_scoped_session
-from sqlalchemy.orm import sessionmaker
 
 from app.domain.commands import Command
 from app.domain.events import Event
@@ -92,17 +90,14 @@ class MessageBusFactory:
         self,
         uow: AbstractUnitOfWork,
         password_hasher: PasswordHasher,
-        session_factory: async_scoped_session | Optional[sessionmaker],
     ):
         self.uow = uow
         self.password_hasher = password_hasher
-        self.session_factory = session_factory
 
     def __call__(self) -> MessageBus:
         dependencies = {
             "uow": self.uow,
             "hasher": self.password_hasher,
-            "session_factory": self.session_factory,
         }
         injected_event_handlers: dict[Type[Event], list[Callable]] = {
             event_type: [inject_dependencies(handler, dependencies) for handler in handlers]

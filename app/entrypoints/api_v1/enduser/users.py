@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
+from app.domain.common_schemas import Token
 from app.entrypoints import dependencies as deps
 from app.service import exceptions as service_exc
 from app.service.messagebus import MessageBus
@@ -88,7 +89,7 @@ async def create_user(
     status_code=status.HTTP_200_OK,
 )
 async def update_user(
-    token: dict = Depends(deps.decode_token),
+    token: Token = Depends(deps.decode_token),
     messagebus: MessageBus = Depends(deps.get_message_bus),
     user_id: UUID = Path(..., title="user_id"),
     req: dto.UserUpdateIn = Body(...),
@@ -109,7 +110,7 @@ async def update_user(
     status_code=status.HTTP_200_OK,
 )
 async def delete_user(
-    token: dict = Depends(deps.decode_token),
+    token: Token = Depends(deps.decode_token),
     messagebus: MessageBus = Depends(deps.get_message_bus),
     user_id: UUID = Path(..., title="user_id"),
 ):
@@ -129,7 +130,7 @@ async def delete_user(
     status_code=status.HTTP_200_OK,
 )
 async def my_user_page(
-    token: dict = Depends(deps.decode_token),
+    token: Token = Depends(deps.decode_token),
     user_id: UUID = Path(..., title="user_id"),
     session: AsyncSession = Depends(deps.get_reader_session),
 ):
@@ -145,7 +146,7 @@ async def my_user_page(
 
 @router.get("/user/{user_id}/comments", status_code=status.HTTP_200_OK)
 async def my_comments(
-    token: dict = Depends(deps.decode_token),
+    token: Token = Depends(deps.decode_token),
     session: AsyncSession = Depends(deps.get_reader_session),
 ):
     return "ok"
@@ -153,7 +154,7 @@ async def my_comments(
 
 @router.get("/user/{user_id}/bugs", status_code=status.HTTP_200_OK)
 async def my_bugs(
-    token: dict = Depends(deps.decode_token),
+    token: Token = Depends(deps.decode_token),
     session: AsyncSession = Depends(deps.get_reader_session),
 ):
     return "ok"

@@ -170,12 +170,10 @@ def messagebus(
     use_fake_uow: bool,
     uow: AbstractUnitOfWork,
     fake_uow: AbstractUnitOfWork,
-    session_factory: async_scoped_session,
 ) -> MessageBus:
     MESSAGEBUS = MessageBusFactory(
         uow=fake_uow if use_fake_uow else uow,
         password_hasher=PasswordHasher(),
-        session_factory=session_factory,
     )
     return MESSAGEBUS()
 

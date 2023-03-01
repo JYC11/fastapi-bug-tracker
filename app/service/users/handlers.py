@@ -1,9 +1,7 @@
 from uuid import UUID
 
 from argon2 import PasswordHasher
-from sqlalchemy.ext.asyncio import async_scoped_session
 from sqlalchemy.future import select
-from sqlalchemy.orm import sessionmaker
 
 from app.common import exceptions as common_exc
 from app.common.security import create_jwt_token, validate_jwt_token
@@ -63,7 +61,7 @@ async def refresh(cmd: commands.Refresh, *, uow: AbstractUnitOfWork):
         except common_exc.InvalidToken as e:
             raise exc.Forbidden(f"{str(e)}")
 
-        id = UUID(decoded["sub"]) if isinstance(decoded["sub"], str) else decoded["sub"]
+        id = UUID(decoded.sub) if isinstance(decoded.sub, str) else decoded.sub
         user: Users | None = await uow.users.get(id)
         if not user:
             raise exc.Forbidden("user not found")
@@ -132,12 +130,13 @@ async def soft_delete_user(cmd: commands.SoftDeleteUser, *, uow: AbstractUnitOfW
         return
 
 
+# event handlers
 async def insert_into_user_read_model(
     event: events.UserCreated,
     *,
-    session_factory: async_scoped_session | sessionmaker,
+    uow: AbstractUnitOfWork,
 ):
-    async with session_factory() as session:
+    async with uow:
         new_row = UserReadModel(
             id=event.id,
             username=event.username,
@@ -146,36 +145,36 @@ async def insert_into_user_read_model(
             user_status=event.user_status,
             is_admin=event.is_admin,
         )
-        session.add(new_row)
-        await session.commit()
+        uow.session.add(new_row)
+        await uow.commit()
 
 
 async def update_user_read_model(
     event: events.UserUpdated,
     *,
-    session_factory: async_scoped_session | sessionmaker,
+    uow: AbstractUnitOfWork,
 ):
-    async with session_factory() as session:
+    async with uow:
         query = select(UserReadModel).where(UserReadModel.id == event.id)
-        execution = await session.execute(query)
+        execution = await uow.session.execute(query)
         row: UserReadModel | None = execution.scalars().first()
         if row:
             for key in event.__dict__.keys():
                 val = getattr(event, key)
                 if val is not None:
                     setattr(row, key, val)
-            await session.commit()
+            await uow.commit()
 
 
 async def soft_delete_user_read_model(
     event: events.UserSoftDeleted,
     *,
-    session_factory: async_scoped_session | sessionmaker,
+    uow: AbstractUnitOfWork,
 ):
-    async with session_factory() as session:
+    async with uow:
         query = select(UserReadModel).where(UserReadModel.id == event.id)
-        execution = await session.execute(query)
+        execution = await uow.session.execute(query)
         row: UserReadModel | None = execution.scalars().first()
         if row:
             row.user_status = event.user_status
-            await session.commit()
+            await uow.commit()

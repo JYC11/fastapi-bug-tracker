@@ -15,7 +15,6 @@ from app.service.unit_of_work import SqlAlchemyUnitOfWork
 MESSAGEBUS = MessageBusFactory(
     uow=SqlAlchemyUnitOfWork(),
     password_hasher=PasswordHasher(),
-    session_factory=async_autocommit_session_factory,
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.api_v1_login_url)
@@ -37,7 +36,7 @@ async def decode_token(
 ):
     try:
         decoded_token = validate_jwt_token(token)
-        if str(user_id) != decoded_token["sub"]:
+        if str(user_id) != decoded_token.sub:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token and user_id mismatch")
         return decoded_token
     except ExpiredSignatureError as e:
