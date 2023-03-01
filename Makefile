@@ -2,6 +2,9 @@ include .env
 EXPORT = export PYTHONPATH=$(PWD)
 
 
+initdb:
+	$(EXPORT) && pipenv run sh scripts/init-db.sh
+
 migration:
 	$(EXPORT) && pipenv run alembic revision --autogenerate -m "$(MIGR_NAME)"
 
