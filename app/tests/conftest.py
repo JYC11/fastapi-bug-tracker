@@ -123,21 +123,14 @@ async def clear_tables_of_data(session: AsyncSession):
 @pytest_asyncio.fixture(scope="function")
 async def session_factory(async_engine: AsyncEngine):
     async with async_engine.connect() as conn:
-        session_factory = sessionmaker(
-            conn,
-            expire_on_commit=False,
-            autoflush=False,
-            class_=AsyncSession,
+        session_factory: async_scoped_session = async_scoped_session(
+            sessionmaker(
+                conn,
+                expire_on_commit=False,
+                class_=AsyncSession,
+            ),
+            scopefunc=asyncio.current_task,
         )
-        # session_factory: async_scoped_session = async_scoped_session(
-        #     sessionmaker(
-        #         conn,
-        #         expire_on_commit=False,
-        #         autoflush=False,
-        #         class_=AsyncSession,
-        #     ),
-        #     scopefunc=asyncio.current_task,
-        # )
         try:
             yield session_factory
         finally:

@@ -105,6 +105,8 @@ async def test_update_user(
     execution1 = await session.execute(select(Users))
     users1: list[Users] = execution1.scalars().all()
     assert users1
+    found_user: Users = users1[0]
+    assert found_user.username == "something else"
     # TODO: unhappy path test cases
 
 
@@ -130,4 +132,9 @@ async def test_delete_user(
             headers=enduser_headers,
         )
     assert res.status_code == HTTPStatus.OK
+    execution1 = await session.execute(select(Users))
+    users1: list[Users] = execution1.scalars().all()
+    assert users1
+    found_user: Users = users1[0]
+    assert found_user.user_status == "deleted"
     # TODO: unhappy path test cases

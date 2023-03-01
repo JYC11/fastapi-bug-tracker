@@ -103,17 +103,16 @@ async def create_user(cmd: commands.CreateUser, *, uow: AbstractUnitOfWork, hash
 
 async def update_user(cmd: commands.UpdateUser, *, uow: AbstractUnitOfWork, hasher: PasswordHasher):
     async with uow:
-        async with uow.users.session.begin():
-            user: Users | None = await uow.users.get(cmd.id)
-            if not user:
-                raise exc.ItemNotFound(f"user with id {cmd.id} not found")
-            if not user.is_active:
-                raise exc.ItemNotFound("user is deleted")
-            data = cmd.dict(exclude_unset=True, exclude_none=True)
-            user.update_user(data, hasher)
-            uow.users.seen.add(user)
-            uow.event_store.add(user.generate_event_store())
-            # await uow.session.commit()
+        user: Users | None = await uow.users.get(cmd.id)
+        if not user:
+            raise exc.ItemNotFound(f"user with id {cmd.id} not found")
+        if not user.is_active:
+            raise exc.ItemNotFound("user is deleted")
+        data = cmd.dict(exclude_unset=True, exclude_none=True)
+        user.update_user(data, hasher)
+        uow.users.seen.add(user)
+        uow.event_store.add(user.generate_event_store())
+        await uow.commit()
         return user
 
 

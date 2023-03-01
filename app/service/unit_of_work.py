@@ -23,9 +23,6 @@ class AbstractUnitOfWork(abc.ABC):
         self.event_store: AbstractRepository
         return self
 
-    async def __aexit__(self, *args):
-        return
-
     async def commit(self):
         await self._commit()
 
@@ -65,7 +62,6 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
         return await super().__aenter__()
 
     async def __aexit__(self, *args):
-        await self.session.rollback()
         await self.session.close()
 
     async def _commit(self):
