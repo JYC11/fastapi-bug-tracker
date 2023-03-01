@@ -98,7 +98,8 @@ async def create_user(cmd: commands.CreateUser, *, uow: AbstractUnitOfWork, hash
         uow.users.add(new_user)
         uow.event_store.add(new_user.generate_event_store())
         await uow.commit()
-        return new_user
+        _id = new_user.id
+        return _id
 
 
 async def update_user(cmd: commands.UpdateUser, *, uow: AbstractUnitOfWork, hasher: PasswordHasher):
@@ -113,7 +114,8 @@ async def update_user(cmd: commands.UpdateUser, *, uow: AbstractUnitOfWork, hash
         uow.users.seen.add(user)
         uow.event_store.add(user.generate_event_store())
         await uow.commit()
-        return user
+        _id = user.id
+        return _id
 
 
 async def soft_delete_user(cmd: commands.SoftDeleteUser, *, uow: AbstractUnitOfWork):

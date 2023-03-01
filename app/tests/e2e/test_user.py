@@ -4,11 +4,8 @@ import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
 from app.common.settings import settings
-from app.domain.models import Users
 from app.main import app
 from app.tests.e2e.conftest import create_user_and_login
 
@@ -25,24 +22,18 @@ def test_health_check(client: TestClient):
 async def test_create_user(
     test_app: FastAPI,
     user_data_in: dict,
-    session: AsyncSession,
 ):
     url = test_app.url_path_for("create_user")
     async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
         res = await ac.post(url, json=user_data_in)
-    assert res.status_code == HTTPStatus.CREATED
-
-    execution = await session.execute(select(Users))
-    users = execution.scalars().all()
-    assert len(users) == 1
-    # TODO: unhappy path test cases
+    data = res.json()
+    assert res.status_code == HTTPStatus.CREATED, data
 
 
 @pytest.mark.asyncio
 async def test_login_and_refresh_user(
     test_app: FastAPI,
     user_data_in: dict,
-    session: AsyncSession,
 ):
     create_url = test_app.url_path_for("create_user")
     async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
@@ -81,20 +72,22 @@ async def test_login_and_refresh_user(
 async def test_update_user(
     test_app: FastAPI,
     user_data_in: dict,
-    session: AsyncSession,
 ):
-    enduser_headers = await create_user_and_login(
+    enduser_headers, new_user_id = await create_user_and_login(
         app=test_app,
         user_data_in=user_data_in,
     )
 
-    execution = await session.execute(select(Users))
-    users: list[Users] = execution.scalars().all()
-    user = users[0]
-    user_data_in["id"] = str(user.id)
+    my_user_page_url = test_app.url_path_for("my_user_page", user_id=new_user_id)
+    async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
+        my_user_page_res1 = await ac.get(my_user_page_url, headers=enduser_headers)
+    my_user_page1 = my_user_page_res1.json()
+    assert my_user_page_res1.status_code == HTTPStatus.OK, my_user_page1
+
+    user_data_in["id"] = new_user_id
     user_data_in["username"] = "something else"
 
-    update_url = test_app.url_path_for("update_user", user_id=str(user.id))
+    update_url = test_app.url_path_for("update_user", user_id=str(new_user_id))
     async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
         res = await ac.put(
             update_url,
@@ -102,11 +95,14 @@ async def test_update_user(
             json=user_data_in,
         )
     assert res.status_code == HTTPStatus.OK
-    execution1 = await session.execute(select(Users))
-    users1: list[Users] = execution1.scalars().all()
-    assert users1
-    found_user: Users = users1[0]
-    assert found_user.username == "something else"
+
+    async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
+        my_user_page_res2 = await ac.get(my_user_page_url, headers=enduser_headers)
+    my_user_page2 = my_user_page_res2.json()
+    assert my_user_page_res2.status_code == HTTPStatus.OK, my_user_page2
+    assert my_user_page1["username"] != my_user_page2["username"]
+    assert my_user_page2["username"] == "something else"
+
     # TODO: unhappy path test cases
 
 
@@ -114,27 +110,22 @@ async def test_update_user(
 async def test_delete_user(
     test_app: FastAPI,
     user_data_in: dict,
-    session: AsyncSession,
 ):
-    enduser_headers = await create_user_and_login(
+    enduser_headers, new_user_id = await create_user_and_login(
         app=test_app,
         user_data_in=user_data_in,
     )
 
-    execution = await session.execute(select(Users))
-    users: list[Users] = execution.scalars().all()
-    user = users[0]
-
-    delete_url = test_app.url_path_for("delete_user", user_id=str(user.id))
+    delete_url = test_app.url_path_for("delete_user", user_id=str(new_user_id))
     async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
         res = await ac.delete(
             delete_url,
             headers=enduser_headers,
         )
     assert res.status_code == HTTPStatus.OK
-    execution1 = await session.execute(select(Users))
-    users1: list[Users] = execution1.scalars().all()
-    assert users1
-    found_user: Users = users1[0]
-    assert found_user.user_status == "deleted"
-    # TODO: unhappy path test cases
+
+    my_user_page_url = test_app.url_path_for("my_user_page", user_id=new_user_id)
+    async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
+        my_user_page_res = await ac.get(my_user_page_url, headers=enduser_headers)
+    my_user_page = my_user_page_res.json()
+    assert my_user_page_res.status_code == HTTPStatus.NOT_FOUND, my_user_page

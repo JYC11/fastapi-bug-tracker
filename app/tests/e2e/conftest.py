@@ -12,8 +12,8 @@ from app.common.settings import settings
 async def create_test_user(app: FastAPI, user_data_in: dict):
     create_url = app.url_path_for("create_user")
     async with httpx.AsyncClient(app=app, base_url=settings.test_url) as ac:
-        await ac.post(create_url, json=user_data_in)
-    return
+        res = await ac.post(create_url, json=user_data_in)
+    return res.json()
 
 
 async def test_user_login(app: FastAPI, username: str, password: str):
@@ -31,10 +31,10 @@ async def test_user_login(app: FastAPI, username: str, password: str):
 
 # if I want to just test with authenticated user
 async def create_user_and_login(app: FastAPI, user_data_in: dict):
-    await create_test_user(app=app, user_data_in=user_data_in)
+    user_id = await create_test_user(app=app, user_data_in=user_data_in)
     res = await test_user_login(
         app=app,
         username=user_data_in["email"],
         password=user_data_in["password"],
     )
-    return {"Authorization": f"Bearer {res['token']}"}
+    return ({"Authorization": f"Bearer {res['token']}"}, user_id)

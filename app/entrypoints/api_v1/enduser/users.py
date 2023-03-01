@@ -8,7 +8,7 @@ from starlette import status
 from app.entrypoints import dependencies as deps
 from app.service import exceptions as service_exc
 from app.service.messagebus import MessageBus
-from app.service.users import commands, dto
+from app.service.users import commands, dto, views
 
 router = APIRouter()
 
@@ -74,7 +74,8 @@ async def create_user(
 ):
     try:
         cmd = commands.CreateUser(**req.dict())
-        await messagebus.handle(message=cmd)
+        res = await messagebus.handle(message=cmd)
+        return res
     except service_exc.DuplicateRecord as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -94,7 +95,8 @@ async def update_user(
 ):
     try:
         cmd = commands.UpdateUser(id=user_id, **req.dict())
-        await messagebus.handle(message=cmd)
+        res = await messagebus.handle(message=cmd)
+        return res
     except service_exc.ItemNotFound as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -121,12 +123,24 @@ async def delete_user(
         )
 
 
-@router.get("/user/{user_id}", status_code=status.HTTP_200_OK)
+@router.get(
+    "/user/{user_id}",
+    response_model=dto.UserOut,
+    status_code=status.HTTP_200_OK,
+)
 async def my_user_page(
     token: dict = Depends(deps.decode_token),
+    user_id: UUID = Path(..., title="user_id"),
     session: AsyncSession = Depends(deps.get_reader_session),
 ):
-    return "ok"
+    try:
+        out = await views.get_my_user_page(session, user_id)
+        return out
+    except service_exc.ItemNotFound as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
 
 
 @router.get("/user/{user_id}/comments", status_code=status.HTTP_200_OK)
