@@ -2,7 +2,7 @@ import abc
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 from uuid import UUID, uuid4
 
 from argon2 import PasswordHasher
@@ -138,9 +138,9 @@ class Users(Base):
 @dataclass(repr=True, eq=False)
 class Comments(Base):
     bug_id: UUID = field(default_factory=lambda: uuid4())
-    bug: "Bugs" = field(default_factory=lambda: Bugs())
+    bug: "Bugs" = field(init=False)
     author_id: UUID = field(default_factory=lambda: uuid4())
-    author: Users = field(default_factory=lambda: Users())
+    author: Users = field(init=False)
     text: str = field(default_factory=lambda: "")
     vote_count: int = field(default_factory=lambda: 0)
     edited: bool = field(default_factory=lambda: False)
@@ -164,9 +164,9 @@ class Comments(Base):
 class Bugs(Base):
     title: str = field(default_factory=lambda: "")
     author_id: UUID = field(default_factory=lambda: uuid4())
-    author: Users = field(default_factory=lambda: Users())
-    assignee_id: UUID | None = field(default_factory=lambda: uuid4())
-    assignee: Users = field(default_factory=lambda: Users())
+    author: Users = field(init=False)
+    assignee_id: UUID | None = field(default_factory=lambda: None)
+    assignee: Optional[Users] = field(init=False, default_factory=lambda: None)
     description: str = field(default_factory=lambda: "")
     environment: EnvironmentEnum = field(default_factory=lambda: EnvironmentEnum.STAGE)
     urgency: UrgencyEnum = field(default_factory=lambda: UrgencyEnum.LOW)
@@ -194,6 +194,7 @@ class Bugs(Base):
         return bug
 
     def update_bug(self, data: dict[str, Any]):
+        data["version"] = self.version + 1  # find a db way to do this
         self.update(data)
         self.set_edited()
         event = BugUpdated(**data)
@@ -202,6 +203,7 @@ class Bugs(Base):
         return self
 
     def delete_bug(self):
+        self.version += 1
         self.record_status = RecordStatusEnum.DELETED
         self.events.append(BugSoftDeleted(id=self.id))
 
