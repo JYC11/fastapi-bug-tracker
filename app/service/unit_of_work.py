@@ -23,6 +23,9 @@ class AbstractUnitOfWork(abc.ABC):
         self.event_store: AbstractRepository
         return self
 
+    async def __aexit__(self, *args):
+        raise NotImplementedError
+
     async def commit(self):
         await self._commit()
 
