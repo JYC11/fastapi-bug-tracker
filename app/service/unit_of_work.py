@@ -8,7 +8,6 @@ from app.common.db import async_transactional_session_factory
 from app.service import exceptions
 from app.service.bugs.repository import BugRepository
 from app.service.event_store.repository import EventStoreRepository
-from app.service.tags.repository import TagRepository
 from app.service.users.repository import UserRepository
 
 DEFAULT_TRANSACTIONAL_FACTORY = async_transactional_session_factory
@@ -18,7 +17,6 @@ class AbstractUnitOfWork(abc.ABC):
     async def __aenter__(self) -> "AbstractUnitOfWork":
         self.session: AsyncSession
         self.bugs: AbstractRepository
-        self.tags: AbstractRepository
         self.users: AbstractRepository
         self.event_store: AbstractRepository
         return self
@@ -59,7 +57,6 @@ class SqlAlchemyUnitOfWork(AbstractUnitOfWork):
     async def __aenter__(self) -> AbstractUnitOfWork:
         self.session: AsyncSession = self.session_factory()
         self.bugs = BugRepository(session=self.session)
-        self.tags = TagRepository(session=self.session)
         self.users = UserRepository(session=self.session)
         self.event_store = EventStoreRepository(session=self.session)
         return await super().__aenter__()

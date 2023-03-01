@@ -55,11 +55,6 @@ class FakeUserRepository(FakeRepository[models.Users]):
             return out
 
 
-class FakeTagRepository(FakeRepository[models.Tags]):
-    def __init__(self):
-        super(FakeTagRepository, self).__init__(models.Tags)
-
-
 class FakeBugRepository(FakeRepository[models.Bugs]):
     def __init__(self):
         super(FakeBugRepository, self).__init__(models.Bugs)

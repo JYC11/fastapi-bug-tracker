@@ -2,7 +2,6 @@ from app.service.unit_of_work import AbstractUnitOfWork
 from app.tests.fakes.repository import (
     FakeBugRepository,
     FakeEventStoreRepository,
-    FakeTagRepository,
     FakeUserRepository,
 )
 
@@ -13,7 +12,6 @@ class FakeUnitOfWork(AbstractUnitOfWork):
 
     async def __aenter__(self) -> AbstractUnitOfWork:
         self.bugs = FakeBugRepository()
-        self.tags = FakeTagRepository()
         self.users = FakeUserRepository()
         self.event_store = FakeEventStoreRepository()
         return await super().__aenter__()

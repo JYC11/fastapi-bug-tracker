@@ -43,30 +43,6 @@ users = sa.Table(
     sa.Column("security_question_answer", sa.Text, nullable=False),
 )
 
-tags = sa.Table(
-    "bug_tracker_tags",
-    mapper_registry.metadata,
-    sa.Column(
-        "id",
-        postgresql.UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid4,
-        index=True,
-    ),
-    sa.Column(
-        "create_dt",
-        postgresql.TIMESTAMP(timezone=True),
-        default=sa.func.now(),
-        server_default=sa.func.now(),
-        nullable=False,
-    ),
-    sa.Column(
-        "update_dt",
-        postgresql.TIMESTAMP(timezone=True),
-        onupdate=sa.func.current_timestamp(),
-    ),
-    sa.Column("name", sa.String(length=50), nullable=False),
-)
 
 bugs = sa.Table(
     "bug_tracker_bugs",
@@ -106,6 +82,7 @@ bugs = sa.Table(
         nullable=True,
     ),
     sa.Column("description", sa.Text, nullable=False),
+    sa.Column("environment", sa.String(length=50), nullable=False),
     sa.Column("edited", sa.Boolean),
     sa.Column("images", sa.ARRAY(sa.String(255)), nullable=True),
     sa.Column("urgency", sa.String(length=50), nullable=False),
@@ -155,41 +132,6 @@ comments = sa.Table(
     sa.Column("edited", sa.Boolean),
 )
 
-bug_tags = sa.Table(
-    "bug_tracker_bug_tag",
-    mapper_registry.metadata,
-    sa.Column(
-        "id",
-        postgresql.UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid4,
-        index=True,
-    ),
-    sa.Column(
-        "create_dt",
-        postgresql.TIMESTAMP(timezone=True),
-        default=sa.func.now(),
-        server_default=sa.func.now(),
-        nullable=False,
-    ),
-    sa.Column(
-        "update_dt",
-        postgresql.TIMESTAMP(timezone=True),
-        onupdate=sa.func.current_timestamp(),
-    ),
-    sa.Column(
-        "tag_id",
-        postgresql.UUID(as_uuid=True),
-        sa.ForeignKey(f"{tags.name}.id", ondelete="cascade"),
-        index=True,
-    ),
-    sa.Column(
-        "bug_id",
-        postgresql.UUID(as_uuid=True),
-        sa.ForeignKey(f"{bugs.name}.id", ondelete="cascade"),
-        index=True,
-    ),
-)
 
 event_store = sa.Table(
     "bug_tracker_event_store",
@@ -284,13 +226,6 @@ def start_mappers():
         },
     )
     mapper_registry.map_imperatively(
-        models.Tags,
-        tags,
-        properties={
-            "bug_tags": relationship(models.BugTags, back_populates="tag"),
-        },
-    )
-    mapper_registry.map_imperatively(
         models.Comments,
         comments,
         properties={
@@ -301,20 +236,6 @@ def start_mappers():
             "author": relationship(
                 models.Users,
                 back_populates="comments",
-            ),
-        },
-    )
-    mapper_registry.map_imperatively(
-        models.BugTags,
-        bug_tags,
-        properties={
-            "tag": relationship(
-                models.Tags,
-                back_populates="bug_tags",
-            ),
-            "bug": relationship(
-                models.Bugs,
-                back_populates="bug_tags",
             ),
         },
     )
@@ -331,10 +252,6 @@ def start_mappers():
                 models.Users,
                 back_populates="assigned_bugs",
                 foreign_keys=[bugs.c.assignee_id],
-            ),
-            "bug_tags": relationship(
-                models.BugTags,
-                back_populates="bug",
             ),
             "comments": relationship(
                 models.Comments,

@@ -9,6 +9,14 @@ class UserTypeEnum(str, enum.Enum):
     PM = "pm"
 
 
+class EnvironmentEnum(str, enum.Enum):
+    CI = "ci"
+    CD = "cd"
+    DEV = "development"
+    STAGE = "staging"
+    PROD = "production"
+
+
 class UrgencyEnum(str, enum.Enum):
     LOW = "low"
     MEDIUM = "medium"

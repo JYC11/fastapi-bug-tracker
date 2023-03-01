@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
-from app.domain.enums import BugStatusEnum, RecordStatusEnum, UrgencyEnum, UserTypeEnum
+from app.domain.enums import BugStatusEnum, EnvironmentEnum, RecordStatusEnum, UrgencyEnum, UserTypeEnum
 from app.domain.events import Event
 from app.service.users.events import UserCreated, UserSoftDeleted, UserUpdated
 
@@ -127,20 +127,6 @@ class Users(Base):
 
 
 @dataclass(repr=True, eq=False)
-class Tags(Base):
-    name: str = field(default_factory=lambda: "")
-    bug_tags: list["BugTags"] = field(default_factory=list)
-
-
-@dataclass(repr=True, eq=False)
-class BugTags(Base):  # many-to-many with bugs
-    tag_id: UUID = field(default_factory=lambda: uuid4())
-    tag: Tags = field(default_factory=lambda: Tags())
-    bug_id: UUID = field(default_factory=lambda: uuid4())
-    bug: "Bugs" = field(default_factory=lambda: Bugs())
-
-
-@dataclass(repr=True, eq=False)
 class Comments(Base):
     bug_id: UUID = field(default_factory=lambda: uuid4())
     bug: "Bugs" = field(default_factory=lambda: Bugs())
@@ -173,6 +159,7 @@ class Bugs(Base):
     assignee_id: UUID = field(default_factory=lambda: uuid4())
     assignee: Users = field(default_factory=lambda: Users())
     description: str = field(default_factory=lambda: "")
+    environment: EnvironmentEnum = field(default_factory=lambda: EnvironmentEnum.STAGE)
     urgency: UrgencyEnum = field(default_factory=lambda: UrgencyEnum.LOW)
     status: BugStatusEnum = field(default_factory=lambda: BugStatusEnum.NEW)
     record_status: RecordStatusEnum = field(default_factory=lambda: RecordStatusEnum.ACTIVE)
@@ -180,12 +167,7 @@ class Bugs(Base):
     edited: bool = field(default_factory=lambda: False)
     images: list[str] = field(default_factory=list)
     comments: list[Comments] = field(default_factory=list)
-    bug_tags: list[BugTags] = field(default_factory=list)
     events: deque[Event] = field(default_factory=deque)
-
-    @property
-    def tags(self) -> list[Tags]:
-        return [m.tag for m in self.bug_tags]
 
     def set_urgency(self, urgency: UrgencyEnum):
         self.urgency = urgency
@@ -238,30 +220,14 @@ class Bugs(Base):
             return True
         return False
 
-    def _find_tag_mapper(self, ident: UUID) -> BugTags | None:
-        tag = [c for c in self.bug_tags if c.tag_id == ident]
-        if tag:
-            return tag[0]
-        return None
 
-    def add_tag(self, ident: UUID):
-        tag = self._find_tag_mapper(ident)
-        if not tag:
-            data = {"id": uuid4(), "tag_id": ident, "bug_id": self.id}
-            bug_tag_mapper = BugTags.create(data)
-            self.bug_tags.append(bug_tag_mapper)
-            # emit event
-            return True
-        return False
-
-    def remove_tag_mapper(self, ident: UUID):
-        tag = self._find_tag_mapper(ident)
-        if tag:
-            idx = self.bug_tags.index(tag)
-            self.bug_tags.pop(idx)
-            # emit event
-            return True
-        return False
+# future feature, just get the main stuff done for now
+# @dataclass(repr=True, eq=False)
+# class Watchers:
+#     id: UUID = field(default_factory=lambda: uuid4())
+#     create_dt: datetime = field(init=False, repr=True)
+#     bug_id: UUID = field(default_factory=lambda: uuid4())
+#     user_id: UUID = field(default_factory=lambda: uuid4())
 
 
 @dataclass(eq=False)
