@@ -38,7 +38,6 @@ class SoftDeleteBug(Command):
 
 
 class CreateComment(Command):
-    id: UUID
     bug_id: UUID
     author_id: UUID
     text: str
@@ -53,7 +52,7 @@ class UpdateComment(Command):
     edited: bool = True
 
 
-class SoftDeleteComment(Command):
+class DeleteComment(Command):
     id: UUID
     bug_id: UUID
     author_id: UUID

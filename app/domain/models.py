@@ -249,8 +249,8 @@ class Bugs(Base):
         comment = self.find_comment(ident)
         if comment:
             idx = self.comments.index(comment)
-            self.comments.pop(idx)
             self.events.append(CommentDeleted(id=comment.id))
+            return self.comments.pop(idx)
 
 
 # TODO: future feature, just get the main stuff done for now

@@ -1,7 +1,7 @@
 import copy
 
 from app.domain import enums
-from app.domain.models import Bugs
+from app.domain.models import Bugs, Comments
 from app.service.bugs import events
 
 
@@ -12,10 +12,10 @@ def test_bug_creation(bug_data_in: dict):
 
     assert len(new_bug.events) == 1, isinstance(new_bug.events[0], events.BugCreated)
 
-    # created_event = new_bug.events[0]
-    # bug_from_event = created_event.apply(Bugs())
-    # for key, value in bug_data_in.items():
-    #     assert value == getattr(bug_from_event, key)
+    created_event = new_bug.events[0]
+    bug_from_event = created_event.apply(Bugs())
+    for key, value in bug_data_in.items():
+        assert value == getattr(bug_from_event, key)
 
 
 def test_bug_update(bug_data_in: dict):
@@ -31,11 +31,11 @@ def test_bug_update(bug_data_in: dict):
     assert isinstance(new_bug.events[0], events.BugCreated)
     assert isinstance(new_bug.events[1], events.BugUpdated)
 
-    # bug_from_event = Bugs()
-    # for event in new_bug.events:
-    #     event.apply(bug_from_event)
-    # assert new_bug.status == enums.BugStatusEnum.IN_PROGRESS
-    # assert new_bug.edited is True
+    bug_from_event = Bugs()
+    for event in new_bug.events:
+        event.apply(bug_from_event)
+    assert new_bug.status == enums.BugStatusEnum.IN_PROGRESS
+    assert new_bug.edited is True
 
 
 def test_bug_delete(bug_data_in: dict):
@@ -47,10 +47,10 @@ def test_bug_delete(bug_data_in: dict):
     assert isinstance(new_bug.events[0], events.BugCreated)
     assert isinstance(new_bug.events[1], events.BugSoftDeleted)
 
-    # bug_from_event = Bugs()
-    # for event in new_bug.events:
-    #     event.apply(bug_from_event)
-    # assert new_bug.record_status == enums.RecordStatusEnum.DELETED
+    bug_from_event = Bugs()
+    for event in new_bug.events:
+        event.apply(bug_from_event)
+    assert new_bug.record_status == enums.RecordStatusEnum.DELETED
 
 
 def test_comment_creation(bug_data_in: dict, comment_data_in: dict):
@@ -68,13 +68,13 @@ def test_comment_creation(bug_data_in: dict, comment_data_in: dict):
         else:
             assert value == getattr(comment, key)
 
-    # comment_created = new_bug.events[1]
-    # comment_from_event = comment_created.apply(Comments())
-    # for key, value in comment_data_in.items():
-    #     if key == "bug_id":
-    #         assert value == new_bug.id
-    #     else:
-    #         assert value == getattr(comment_from_event, key)
+    comment_created = new_bug.events[1]
+    comment_from_event = comment_created.apply(Comments())
+    for key, value in comment_data_in.items():
+        if key == "bug_id":
+            assert value == new_bug.id
+        else:
+            assert value == getattr(comment_from_event, key)
 
 
 def test_comment_update(bug_data_in: dict, comment_data_in: dict):
@@ -93,14 +93,14 @@ def test_comment_update(bug_data_in: dict, comment_data_in: dict):
     assert len(new_bug.events) == 3
     assert isinstance(new_bug.events[-1], events.CommentUpdated)
 
-    # comment_from_event = Comments()
-    # for event in new_bug.events:
-    #     if isinstance(event, events.BugCreated):
-    #         pass
-    #     else:
-    #         event.apply(comment_from_event)
-    # assert comment_from_event.text == update_data["text"]
-    # assert comment_from_event.edited is True
+    comment_from_event = Comments()
+    for event in new_bug.events:
+        if isinstance(event, events.BugCreated):
+            pass
+        else:
+            event.apply(comment_from_event)
+    assert comment_from_event.text == update_data["text"]
+    assert comment_from_event.edited is True
 
 
 def test_comment_upvote_downvote(bug_data_in: dict, comment_data_in: dict):

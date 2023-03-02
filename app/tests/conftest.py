@@ -336,7 +336,6 @@ def comment_data_in(
         "bug_id": uuid4(),  # obviously replace with actual bug id
         "author_id": uuid4(),  # obviously replace with actual user id
         "text": comment_text,
-        "vote_count": vote_count,
         "edited": comment_is_edited,
     }
 
@@ -353,7 +352,6 @@ def comment_data_list(comment_data_to_generate):
             "bug_id": uuid4(),  # obviously replace with actual bug id
             "author_id": uuid4(),  # obviously replace with actual user id
             "text": faker.paragraph(nb_sentences=5),
-            "vote_count": 0,
             "edited": False,
         }
         for _ in range(comment_data_to_generate)

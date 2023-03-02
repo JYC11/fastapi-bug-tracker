@@ -69,6 +69,25 @@ async def test_login_and_refresh_user(
 
 
 @pytest.mark.asyncio
+async def test_get_my_user_page(
+    test_app: FastAPI,
+    user_data_in: dict,
+):
+    enduser_headers, new_user_id = await create_user_and_login(
+        app=test_app,
+        user_data_in=user_data_in,
+    )
+
+    my_user_page_url = test_app.url_path_for("my_user_page", user_id=new_user_id)
+    async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
+        my_user_page_res1 = await ac.get(my_user_page_url, headers=enduser_headers)
+    my_user_page = my_user_page_res1.json()
+    assert my_user_page_res1.status_code == HTTPStatus.OK, my_user_page
+
+    # TODO: unhappy path test cases
+
+
+@pytest.mark.asyncio
 async def test_update_user(
     test_app: FastAPI,
     user_data_in: dict,
@@ -82,7 +101,6 @@ async def test_update_user(
     async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
         my_user_page_res1 = await ac.get(my_user_page_url, headers=enduser_headers)
     my_user_page1 = my_user_page_res1.json()
-    assert my_user_page_res1.status_code == HTTPStatus.OK, my_user_page1
 
     user_data_in["id"] = new_user_id
     user_data_in["username"] = "something else"
@@ -99,7 +117,6 @@ async def test_update_user(
     async with httpx.AsyncClient(app=test_app, base_url=settings.test_url) as ac:
         my_user_page_res2 = await ac.get(my_user_page_url, headers=enduser_headers)
     my_user_page2 = my_user_page_res2.json()
-    assert my_user_page_res2.status_code == HTTPStatus.OK, my_user_page2
     assert my_user_page1["username"] != my_user_page2["username"]
     assert my_user_page2["username"] == "something else"
 
@@ -129,3 +146,5 @@ async def test_delete_user(
         my_user_page_res = await ac.get(my_user_page_url, headers=enduser_headers)
     my_user_page = my_user_page_res.json()
     assert my_user_page_res.status_code == HTTPStatus.NOT_FOUND, my_user_page
+
+    # TODO: unhappy path test cases

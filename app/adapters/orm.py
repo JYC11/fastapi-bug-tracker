@@ -118,7 +118,7 @@ comments = sa.Table(
         postgresql.UUID(as_uuid=True),
         sa.ForeignKey(f"{bugs.name}.id"),
         index=True,
-        nullable=False,
+        # nullable=False,
     ),
     sa.Column(
         "author_id",

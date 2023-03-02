@@ -61,7 +61,6 @@ class CommentUpdated(Event):
     bug_id: UUID = field(repr=False)
     author_id: UUID = field(repr=False)
     text: str = field(repr=False)
-    vote_count: int = field(repr=False)
     edited: bool = field(repr=False)
 
     # TODO: custom event applier to update Comment already in Bug

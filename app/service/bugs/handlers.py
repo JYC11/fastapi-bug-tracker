@@ -62,13 +62,13 @@ async def update_comment(cmd: commands.UpdateComment, *, uow: AbstractUnitOfWork
             raise exc.ItemNotFound(f"comment with id {cmd.id} not found")
         if comment.author_id != cmd.author_id:
             raise exc.Forbidden("user is forbidden from editing")
-        bug.update_comment(cmd.id, {"text": cmd.text})
+        bug.update_comment(cmd.id, cmd.dict())
         uow.event_store.add(bug.generate_event_store())
         await uow.commit()
         return comment.id
 
 
-async def soft_delete_comment(cmd: commands.SoftDeleteComment, *, uow: AbstractUnitOfWork):
+async def delete_comment(cmd: commands.DeleteComment, *, uow: AbstractUnitOfWork):
     async with uow:
         bug: Bugs | None = await uow.bugs.get(cmd.bug_id)
         if not bug:
@@ -78,7 +78,8 @@ async def soft_delete_comment(cmd: commands.SoftDeleteComment, *, uow: AbstractU
             raise exc.ItemNotFound(f"comment with id {cmd.id} not found")
         if comment.author_id != cmd.author_id:
             raise exc.Forbidden("user is forbidden from editing")
-        bug.delete_comment(cmd.id)
+        comment = bug.delete_comment(cmd.id)
+        await uow.session.delete(comment)
         uow.event_store.add(bug.generate_event_store())
         await uow.commit()
         return
